@@ -42,13 +42,12 @@ Status RedisStrings::Get(const Slice& key, std::string* value) {
 Status RedisStrings::Setnx(const Slice& key, const Slice& value, int64_t* ret) {
   *ret = 0;
   std::string old_value;
+  ScopeRecordLock l(lock_mgr_, key);
   Status s = db_->Get(default_read_options_, key, &old_value);
   if (s.ok()) {
     ParsedInternalStringsValue internal_value(&old_value);
     if (internal_value.IsStale()) {
-      *ret = 1;
       InternalStringsValue new_value(value);
-      ScopeRecordLock l(lock_mgr_, key);
       s = db_->Put(default_write_options_, key, new_value.Encode());
       if (s.ok()) {
         *ret = 1;
@@ -56,7 +55,6 @@ Status RedisStrings::Setnx(const Slice& key, const Slice& value, int64_t* ret) {
     }
   } else {
     InternalStringsValue new_value(value);
-    ScopeRecordLock l(lock_mgr_, key);
     s = db_->Put(default_write_options_, key, new_value.Encode());
     if (s.ok()) {
       *ret = 1;
@@ -68,6 +66,7 @@ Status RedisStrings::Setnx(const Slice& key, const Slice& value, int64_t* ret) {
 Status RedisStrings::Append(const Slice& key, const Slice& value, int64_t* ret) {
   std::string old_value;
   *ret = 0;
+  ScopeRecordLock l(lock_mgr_, key);
   Status s = db_->Get(default_read_options_, key, &old_value);
   if (s.ok()) {
     ParsedInternalStringsValue internal_value(&old_value);
@@ -80,7 +79,6 @@ Status RedisStrings::Append(const Slice& key, const Slice& value, int64_t* ret) 
       *ret = old_value.size() + value.size();
       old_value += value.data();
       InternalStringsValue new_value(old_value);
-      ScopeRecordLock l(lock_mgr_, key);
       return db_->Put(default_write_options_, key, new_value.Encode());
     }
   } else {
