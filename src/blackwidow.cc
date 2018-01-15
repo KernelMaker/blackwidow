@@ -45,11 +45,11 @@ Status BlackWidow::Get(const Slice& key, std::string* value) {
   return strings_db_->Get(key, value);
 }
 
-Status BlackWidow::Setnx(const Slice& key, const Slice& value, int64_t* ret) {
+Status BlackWidow::Setnx(const Slice& key, const Slice& value, int32_t* ret) {
   return strings_db_->Setnx(key, value, ret);
 }
 
-Status BlackWidow::Append(const Slice& key, const Slice& value, int64_t* ret) {
+Status BlackWidow::Append(const Slice& key, const Slice& value, int32_t* ret) {
   return strings_db_->Append(key, value, ret);
 }
 

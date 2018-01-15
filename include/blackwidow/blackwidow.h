@@ -31,8 +31,8 @@ class BlackWidow {
   // Strings Commands
   Status Set(const Slice& key, const Slice& value);
   Status Get(const Slice& key, std::string* value);
-  Status Setnx(const Slice& key, const Slice& value, int64_t* ret);
-  Status Append(const Slice& key, const Slice& value, int64_t* ret);
+  Status Setnx(const Slice& key, const Slice& value, int32_t* ret);
+  Status Append(const Slice& key, const Slice& value, int32_t* ret);
 
   // Keys Commands
   Status Expire(const Slice& key, int32_t ttl);

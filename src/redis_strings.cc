@@ -39,7 +39,7 @@ Status RedisStrings::Get(const Slice& key, std::string* value) {
   return s;
 }
 
-Status RedisStrings::Setnx(const Slice& key, const Slice& value, int64_t* ret) {
+Status RedisStrings::Setnx(const Slice& key, const Slice& value, int32_t* ret) {
   *ret = 0;
   std::string old_value;
   ScopeRecordLock l(lock_mgr_, key);
@@ -53,7 +53,7 @@ Status RedisStrings::Setnx(const Slice& key, const Slice& value, int64_t* ret) {
         *ret = 1;
       }
     }
-  } else {
+  } else if (s.IsNotFound()) {
     InternalStringsValue new_value(value);
     s = db_->Put(default_write_options_, key, new_value.Encode());
     if (s.ok()) {
@@ -63,7 +63,7 @@ Status RedisStrings::Setnx(const Slice& key, const Slice& value, int64_t* ret) {
   return s;
 }
 
-Status RedisStrings::Append(const Slice& key, const Slice& value, int64_t* ret) {
+Status RedisStrings::Append(const Slice& key, const Slice& value, int32_t* ret) {
   std::string old_value;
   *ret = 0;
   ScopeRecordLock l(lock_mgr_, key);
@@ -81,11 +81,12 @@ Status RedisStrings::Append(const Slice& key, const Slice& value, int64_t* ret) 
       InternalStringsValue new_value(old_value);
       return db_->Put(default_write_options_, key, new_value.Encode());
     }
-  } else {
+  } else if (s.IsNotFound()) {
     *ret = value.size();
     InternalStringsValue internal_value(value);
     return db_->Put(default_write_options_, key, internal_value.Encode());
   }
+  return s;
 }
 
 Status RedisStrings::Expire(const Slice& key, int32_t ttl) {

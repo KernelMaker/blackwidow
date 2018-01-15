@@ -28,7 +28,7 @@ int main() {
   printf("Get return: %s, value: %s\n", s.ToString().c_str(), value.c_str());
 
   // Setnx
-  int64_t ret;
+  int32_t ret;
   s = db.Setnx("TEST_KEY", "TEST_VALUE", &ret);
   printf("Setnx return: %s, value: %s, ret: %d\n", s.ToString().c_str(), value.c_str(), ret);
 
