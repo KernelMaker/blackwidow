@@ -115,6 +115,8 @@ Status RedisStrings::CompactRange(const rocksdb::Slice* begin,
 }
 
 Status RedisStrings::Setex(const Slice& key, const Slice& value, int32_t ttl) {
+  //the ttl argument must greater than zero, to be compatible with redis
+  assert(ttl > 0);
   InternalStringsValue internal_value(value);
   internal_value.SetRelativeTimestamp(ttl);
   ScopeRecordLock l(lock_mgr_, key);
