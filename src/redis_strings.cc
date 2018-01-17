@@ -114,4 +114,27 @@ Status RedisStrings::CompactRange(const rocksdb::Slice* begin,
   return db_->CompactRange(default_compact_range_options_, begin, end);
 }
 
+Status RedisStrings::Setex(const Slice& key, const Slice& value, const int32_t ttl) {
+  InternalStringsValue internal_value(value);
+  internal_value.SetRelativeTimestamp(ttl);
+  ScopeRecordLock l(lock_mgr_, key);
+  return db_->Put(default_write_options_, key, internal_value.Encode());
+}
+
+Status RedisStrings::Psetex(const Slice& key, const Slice& value, const int64_t ms_ttl) {
+  int32_t ttl = ms_ttl / 1000;
+  return Setex(key, value, ttl);
+}
+
+Status RedisStrings::Strlen(const Slice& key, uint32_t *len) {
+  std::string value;
+  Status s = Get(key, &value);
+  if (s.ok()) {
+    *len = value.size();
+  } else {
+    *len = 0;
+  }
+  return s;
+}
+
 }  //  namespace blackwidow

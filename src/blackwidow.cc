@@ -57,4 +57,16 @@ Status BlackWidow::Expire(const Slice& key, int32_t ttl) {
   return strings_db_->Expire(key, ttl);
 }
 
+Status BlackWidow::Setex(const Slice& key, const Slice& value, const int32_t ttl) {
+  return strings_db_->Setex(key, value, ttl);
+}
+
+Status BlackWidow::Psetex(const Slice& key, const Slice& value, const int64_t ms_ttl) {
+  return strings_db_->Psetex(key, value, ms_ttl);
+}
+
+Status BlackWidow::Strlen(const Slice& key, uint32_t* len) {
+  return strings_db_->Strlen(key, len);
+}
+
 }  //  namespace blackwidow
