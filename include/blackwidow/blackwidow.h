@@ -31,9 +31,8 @@ class BlackWidow {
   // Strings Commands
   Status Set(const Slice& key, const Slice& value);
   Status Get(const Slice& key, std::string* value);
-  Status Setex(const Slice& key, const Slice& value, const int32_t ttl);
-  Status Psetex(const Slice& key, const Slice& value, const int64_t ms_ttl);
-  Status Strlen(const Slice& key, uint32_t* len);
+  Status Setex(const Slice& key, const Slice& value, int32_t ttl);
+  Status Strlen(const Slice& key, int32_t* len);
 
   // Keys Commands
   Status Expire(const Slice& key, int32_t ttl);
