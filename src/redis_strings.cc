@@ -77,7 +77,7 @@ Status RedisStrings::Setrange(const Slice& key, int32_t offset, const Slice& val
   ScopeRecordLock l(lock_mgr_, key);
   Status s = db_->Get(default_read_options_, key, &old_value);
   if (s.ok()) {
-    ParsedInternalStringsValue internal_value(&old_value);
+    ParsedStringsValue internal_value(&old_value);
     internal_value.StripSuffix();
     if (internal_value.IsStale()) {
       std::string tmp(offset, '\0');
@@ -97,13 +97,13 @@ Status RedisStrings::Setrange(const Slice& key, int32_t offset, const Slice& val
       }
     }
     *ret = new_value.length();
-    InternalStringsValue val(new_value);
+    StringsValue val(new_value);
     return db_->Put(default_write_options_, key, val.Encode());
   } else if (s.IsNotFound()) {
     std::string tmp(offset, '\0');
     new_value = tmp.append(value.data());
     *ret = new_value.length();
-    InternalStringsValue val(new_value);
+    StringsValue val(new_value);
     return db_->Put(default_write_options_, key, val.Encode());
   }
   return s;
@@ -150,7 +150,7 @@ Status RedisStrings::BitCount(const Slice& key, int32_t start_offset, int32_t en
   std::string value;
   Status s = db_->Get(default_read_options_, key, &value);
   if (s.ok()) {
-    ParsedInternalStringsValue internal_value(&value);
+    ParsedStringsValue internal_value(&value);
     if (internal_value.IsStale()) {
       return Status::NotFound("Stale");
     } else {
@@ -194,11 +194,11 @@ Status RedisStrings::Decrby(const Slice& key, int64_t value, int64_t* ret) {
   ScopeRecordLock l(lock_mgr_, key);
   Status s = db_->Get(default_read_options_, key, &old_value);
   if (s.ok()) {
-    ParsedInternalStringsValue parsed(&old_value);
+    ParsedStringsValue parsed(&old_value);
     if (parsed.IsStale()) {
       *ret = -value;
       new_value = std::to_string(*ret);
-      InternalStringsValue internal_value(new_value);
+      StringsValue internal_value(new_value);
       return db_->Put(default_write_options_, key, internal_value.Encode());
     } else {
       parsed.StripSuffix();
@@ -212,13 +212,13 @@ Status RedisStrings::Decrby(const Slice& key, int64_t value, int64_t* ret) {
       }
       *ret = ival - value;
       new_value = std::to_string(*ret);
-      InternalStringsValue internal_value(new_value);
+      StringsValue internal_value(new_value);
       return db_->Put(default_write_options_, key, internal_value.Encode());
     }
   } else if (s.IsNotFound()) {
     *ret = -value;
     new_value = std::to_string(*ret);
-    InternalStringsValue internal_value(new_value);
+    StringsValue internal_value(new_value);
     return db_->Put(default_write_options_, key, internal_value.Encode());
   } else {
     return s;
