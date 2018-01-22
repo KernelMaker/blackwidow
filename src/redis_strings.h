@@ -22,7 +22,10 @@ class RedisStrings : public Redis {
   Status Set(const Slice& key, const Slice& value);
   Status Get(const Slice& key, std::string* value);
   Status Setnx(const Slice& key, const Slice& value, int32_t* ret);
+  Status Setrange(const Slice& key, int32_t offset, const Slice& value, int32_t* ret);
   Status Append(const Slice& key, const Slice& value, int32_t* ret);
+  Status BitCount(const Slice& key, int32_t start_offset, int32_t end_offset, int32_t* ret, bool have_offset);
+  Status Decrby(const Slice& key, int64_t value, int64_t* ret);
 
   // Common Commands
   virtual Status Open(const rocksdb::Options& options,
