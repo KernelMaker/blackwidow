@@ -7,7 +7,6 @@
 #define SRC_REDIS_STRINGS_H_
 
 #include <string>
-#include <memory>
 
 #include "src/redis.h"
 
@@ -26,6 +25,8 @@ class RedisStrings : public Redis {
   Status Append(const Slice& key, const Slice& value, int32_t* ret);
   Status BitCount(const Slice& key, int32_t start_offset, int32_t end_offset, int32_t* ret, bool have_offset);
   Status Decrby(const Slice& key, int64_t value, int64_t* ret);
+  Status Setex(const Slice& key, const Slice& value, int32_t ttl);
+  Status Strlen(const Slice& key, int32_t *len);
 
   // Common Commands
   virtual Status Open(const rocksdb::Options& options,

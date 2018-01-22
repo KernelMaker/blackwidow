@@ -18,6 +18,7 @@ using Status = rocksdb::Status;
 using Slice = rocksdb::Slice;
 
 class RedisStrings;
+class RedisHashes;
 class BlackWidow {
  public:
   BlackWidow();
@@ -36,12 +37,20 @@ class BlackWidow {
   Status Append(const Slice& key, const Slice& value, int32_t* ret);
   Status BitCount(const Slice& key, int32_t start_offset, int32_t end_offset, int32_t* ret, bool have_range);
   Status Decrby(const Slice& key, int64_t value, int64_t* ret);
+  Status Setex(const Slice& key, const Slice& value, int32_t ttl);
+  Status Strlen(const Slice& key, int32_t* len);
+
+  // Hashes Commands
+  Status HSet(const Slice& key, const Slice& field, const Slice& value,
+              int32_t* res);
+  Status HGet(const Slice& key, const Slice& field, std::string* value);
 
   // Keys Commands
   Status Expire(const Slice& key, int32_t ttl);
 
  private:
   RedisStrings* strings_db_;
+  RedisHashes* hashes_db_;
 };
 
 }  //  namespace blackwidow
