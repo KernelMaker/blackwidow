@@ -46,7 +46,6 @@ Status RedisStrings::Setnx(const Slice& key, const Slice& value, int32_t* ret) {
   ScopeRecordLock l(lock_mgr_, key);
   Status s = db_->Get(default_read_options_, key, &old_value);
   if (s.ok()) {
-
     ParsedStringsValue parsed_strings_value(&old_value);
     if (parsed_strings_value.IsStale()) {
       StringsValue new_strings_value(value);

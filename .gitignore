@@ -36,3 +36,5 @@ tags
 src/build_version.cc
 examples/strings_example
 examples/db
+benchmark/blackwidow_bench
+benchmark/db
