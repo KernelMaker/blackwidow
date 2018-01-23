@@ -11,6 +11,7 @@
 
 #include "src/strings_filter.h"
 #include "src/scope_record_lock.h"
+#include "src/scope_snapshot.h"
 
 namespace blackwidow {
 
@@ -48,6 +49,8 @@ Status RedisStrings::MSet(const std::vector<BlackWidow::KeyValue>& kvs) {
 
   pre_key.clear();
   for (const auto& kv : tmp_kvs) {
+    // the keys size must greater than zero
+    assert(kv.key.size() > 0);
     cur_key = kv.key.ToString();
     if (pre_key != cur_key) {
       lock_mgr_->TryLock(cur_key);
@@ -73,16 +76,26 @@ Status RedisStrings::MSet(const std::vector<BlackWidow::KeyValue>& kvs) {
 }
 
 Status RedisStrings::MGet(const std::vector<Slice>& keys,
-                          std::vector<std::string>& values) {
+                          std::vector<std::string>* values) {
   Status s;
+  std::string value;
+  rocksdb::ReadOptions read_options;
+  const rocksdb::Snapshot* snapshot;
+  ScopeSnapshot ss(db_, &snapshot);
+  read_options.snapshot = snapshot;
   for (const auto& key : keys) {
-    std::string value;
-    s = Get(key, &value);
+    s = db_->Get(read_options, key, &value);
     if (s.ok()) {
-      values.push_back(value);
+      ParsedStringsValue parsed_strings_value(&value);
+      if (parsed_strings_value.IsStale()) {
+        value.clear();
+      } else {
+        parsed_strings_value.StripSuffix();
+      }
     } else {
-      values.push_back("");
+      value.clear();
     }
+    values->push_back(value);
   }
   return Status::OK();
 }

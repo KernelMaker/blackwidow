@@ -40,7 +40,7 @@ class BlackWidow {
   Status Set(const Slice& key, const Slice& value);
   Status Get(const Slice& key, std::string* value);
   Status MSet(const std::vector<BlackWidow::KeyValue>& kvs);
-  Status MGet(const std::vector<Slice>& keys, std::vector<std::string>& values);
+  Status MGet(const std::vector<Slice>& keys, std::vector<std::string>* values);
 
   // Set key to hold string value if key does not exist
   // return 1 if the key was set

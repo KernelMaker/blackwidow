@@ -60,7 +60,7 @@ Status BlackWidow::MSet(const std::vector<BlackWidow::KeyValue>& kvs) {
 }
 
 Status BlackWidow::MGet(const std::vector<Slice>& keys,
-                        std::vector<std::string>& values) {
+                        std::vector<std::string>* values) {
   return strings_db_->MGet(keys, values);
 }
 

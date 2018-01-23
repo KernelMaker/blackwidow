@@ -92,7 +92,7 @@ int main() {
   // MGet
   std::vector<std::string> values;
   std::vector<rocksdb::Slice> keys {"TEST_KEY1", "TEST_KEY2", "TEST_KEY_NOT_EXIST"};
-  s = db.MGet(keys, values);
+  s = db.MGet(keys, &values);
   printf("MGet return: %s\n", s.ToString().c_str());
   for (uint32_t idx = 0; idx != keys.size(); idx++) {
     printf("idx = %d, keys = %s, value = %s\n", idx, keys[idx].ToString().c_str(), values[idx].c_str());
