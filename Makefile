@@ -127,7 +127,7 @@ $(LIBRARY): $(LIBOBJECTS)
 
 clean:
 	make -C ./examples clean
-	make -C ./test clean
+	make -C ./tests clean
 	rm -f $(LIBRARY)
 	rm -rf $(CLEAN_FILES)
 	rm -rf $(LIBOUTPUT)

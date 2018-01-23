@@ -34,8 +34,17 @@
 # Others
 tags
 src/build_version.cc
+
+# Examples
+examples/db
 examples/strings_example
 examples/hashes_example
-examples/db
-benchmark/blackwidow_bench
+
+# Benchmark
 benchmark/db
+benchmark/blackwidow_bench
+
+# Tests
+tests/db
+tests/gtest_strings
+tests/lock_mgr
