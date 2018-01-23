@@ -234,7 +234,6 @@ Status RedisStrings::Expire(const Slice& key, int32_t ttl) {
     if (parsed_strings_value.IsStale()) {
       return Status::NotFound("Stale");
     }
-
     if (ttl > 0) {
       parsed_strings_value.SetRelativeTimestamp(ttl);
       return db_->Put(default_write_options_, key, value);
