@@ -30,8 +30,17 @@ class BlackWidow {
   Status Open(const Options& options, const std::string& db_path);
 
   // Strings Commands
+  struct KeyValue {
+    Slice key;
+    Slice value;
+    bool operator < (const KeyValue& kv) const {
+      return key.compare(kv.key) < 0;
+    }
+  };
   Status Set(const Slice& key, const Slice& value);
   Status Get(const Slice& key, std::string* value);
+  Status MSet(const std::vector<BlackWidow::KeyValue>& kvs);
+  Status MGet(const std::vector<Slice>& keys, std::vector<std::string>& values);
 
   // Set key to hold string value if key does not exist
   // return 1 if the key was set

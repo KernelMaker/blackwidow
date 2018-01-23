@@ -41,6 +41,52 @@ Status RedisStrings::Get(const Slice& key, std::string* value) {
   return s;
 }
 
+Status RedisStrings::MSet(const std::vector<BlackWidow::KeyValue>& kvs) {
+  std::string pre_key, cur_key;
+  std::vector<BlackWidow::KeyValue> tmp_kvs(kvs);
+  std::sort(tmp_kvs.begin(), tmp_kvs.end());
+
+  pre_key.clear();
+  for (const auto& kv : tmp_kvs) {
+    cur_key = kv.key.ToString();
+    if (pre_key != cur_key) {
+      lock_mgr_->TryLock(cur_key);
+      pre_key = cur_key;
+    }
+  }
+  rocksdb::WriteBatch batch;
+  for (const auto& kv : tmp_kvs) {
+    StringsValue strings_value(kv.value);
+    batch.Put(kv.key, strings_value.Encode());
+  }
+  Status s = db_->Write(default_write_options_, &batch);
+
+  pre_key.clear();
+  for (const auto& kv : tmp_kvs) {
+    cur_key = kv.key.ToString();
+    if (pre_key != cur_key) {
+      lock_mgr_->UnLock(cur_key);
+      pre_key = cur_key;
+    }
+  }
+  return s;
+}
+
+Status RedisStrings::MGet(const std::vector<Slice>& keys,
+                          std::vector<std::string>& values) {
+  Status s;
+  for (const auto& key : keys) {
+    std::string value;
+    s = Get(key, &value);
+    if (s.ok()) {
+      values.push_back(value);
+    } else {
+      values.push_back("");
+    }
+  }
+  return Status::OK();
+}
+
 Status RedisStrings::Setnx(const Slice& key, const Slice& value, int32_t* ret) {
   *ret = 0;
   std::string old_value;

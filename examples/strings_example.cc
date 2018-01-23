@@ -68,16 +68,35 @@ int main() {
   s = db.Compact();
   printf("Compact return: %s\n", s.ToString().c_str());
 
+  // Setex
   s = db.Setex("TEST_KEY", "TEST_VALUE", 1);
   printf("Setex return: %s\n", s.ToString().c_str());
   std::this_thread::sleep_for(std::chrono::milliseconds(2000));
   s = db.Get("TEST_KEY", &value);
   printf("Get return: %s, value: %s\n", s.ToString().c_str(), value.c_str());
 
+  // Strlen
   s = db.Set("TEST_KEY", "TEST_VALUE");
   int32_t len = 0;
   s = db.Strlen("TEST_KEY", &len);
   printf("Strlen return: %s, strlen: %d\n", s.ToString().c_str(), len);
+
+  // MSet
+  std::vector<blackwidow::BlackWidow::KeyValue> kvs;
+  kvs.push_back({"TEST_KEY1", "TEST_VALUE1"});
+  kvs.push_back({"TEST_KEY2", "TEST_VALUE2"});
+  s = db.MSet(kvs);
+  printf("MSet return: %s\n", s.ToString().c_str());
+
+
+  // MGet
+  std::vector<std::string> values;
+  std::vector<rocksdb::Slice> keys {"TEST_KEY1", "TEST_KEY2", "TEST_KEY_NOT_EXIST"};
+  s = db.MGet(keys, values);
+  printf("MGet return: %s\n", s.ToString().c_str());
+  for (uint32_t idx = 0; idx != keys.size(); idx++) {
+    printf("idx = %d, keys = %s, value = %s\n", idx, keys[idx].ToString().c_str(), values[idx].c_str());
+  }
 
   return 0;
 }

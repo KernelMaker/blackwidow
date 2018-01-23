@@ -55,6 +55,15 @@ Status BlackWidow::Get(const Slice& key, std::string* value) {
   return strings_db_->Get(key, value);
 }
 
+Status BlackWidow::MSet(const std::vector<BlackWidow::KeyValue>& kvs) {
+  return strings_db_->MSet(kvs);
+}
+
+Status BlackWidow::MGet(const std::vector<Slice>& keys,
+                        std::vector<std::string>& values) {
+  return strings_db_->MGet(keys, values);
+}
+
 Status BlackWidow::Setnx(const Slice& key, const Slice& value, int32_t* ret) {
   return strings_db_->Setnx(key, value, ret);
 }
