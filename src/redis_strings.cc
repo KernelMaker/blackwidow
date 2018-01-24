@@ -48,15 +48,19 @@ Status RedisStrings::MSet(const std::vector<BlackWidow::KeyValue>& kvs) {
   std::sort(tmp_kvs.begin(), tmp_kvs.end());
 
   pre_key.clear();
+  if (!tmp_kvs.empty()
+    && tmp_kvs[0].key.empty()) {
+    lock_mgr_->TryLock(pre_key);
+  }
+
   for (const auto& kv : tmp_kvs) {
-    // the keys size must greater than zero
-    assert(kv.key.size() > 0);
     cur_key = kv.key.ToString();
     if (pre_key != cur_key) {
       lock_mgr_->TryLock(cur_key);
       pre_key = cur_key;
     }
   }
+
   rocksdb::WriteBatch batch;
   for (const auto& kv : tmp_kvs) {
     StringsValue strings_value(kv.value);
@@ -65,6 +69,11 @@ Status RedisStrings::MSet(const std::vector<BlackWidow::KeyValue>& kvs) {
   Status s = db_->Write(default_write_options_, &batch);
 
   pre_key.clear();
+  if (!tmp_kvs.empty()
+    && tmp_kvs[0].key.empty()) {
+    lock_mgr_->UnLock(pre_key);
+  }
+
   for (const auto& kv : tmp_kvs) {
     cur_key = kv.key.ToString();
     if (pre_key != cur_key) {
@@ -291,8 +300,9 @@ Status RedisStrings::Decrby(const Slice& key, int64_t value, int64_t* ret) {
 }
 
 Status RedisStrings::Setex(const Slice& key, const Slice& value, int32_t ttl) {
-  // the ttl argument must greater than zero, to be compatible with redis
-  assert(ttl > 0);
+  if (ttl <= 0) {
+    return Status::InvalidArgument("invalid expire time");
+  }
   StringsValue strings_value(value);
   strings_value.SetRelativeTimestamp(ttl);
   ScopeRecordLock l(lock_mgr_, key);

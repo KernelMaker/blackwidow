@@ -37,9 +37,22 @@ class BlackWidow {
       return key.compare(kv.key) < 0;
     }
   };
+
+  // Set key to hold the string value. if key
+  // already holds a value, it is overwritten
   Status Set(const Slice& key, const Slice& value);
+
+  // Get the value of key. If the key does not exist
+  // the special value nil is returned
   Status Get(const Slice& key, std::string* value);
+
+  // Sets the given keys to their respective values
+  // MSET replaces existing values with new values
   Status MSet(const std::vector<BlackWidow::KeyValue>& kvs);
+
+  // Returns the values of all specified keys. For every key
+  // that does not hold a string value or does not exist, the
+  // special value nil is returned
   Status MGet(const std::vector<Slice>& keys, std::vector<std::string>* values);
 
   // Set key to hold string value if key does not exist
@@ -70,6 +83,9 @@ class BlackWidow {
   // Set key to hold the string value and set key to timeout after a given
   // number of seconds
   Status Setex(const Slice& key, const Slice& value, int32_t ttl);
+
+  // Returns the length of the string value stored at key. An error
+  // is returned when key holds a non-string value.
   Status Strlen(const Slice& key, int32_t* len);
 
   // Hashes Commands
