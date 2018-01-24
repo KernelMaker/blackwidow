@@ -229,6 +229,7 @@ Status RedisStrings::Decrby(const Slice& key, int64_t value, int64_t* ret) {
   } else {
     return s;
   }
+}
 
 Status RedisStrings::Setex(const Slice& key, const Slice& value, int32_t ttl) {
   // the ttl argument must greater than zero, to be compatible with redis
