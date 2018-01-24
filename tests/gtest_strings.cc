@@ -10,19 +10,19 @@
 #include "blackwidow/blackwidow.h"
 
 class StringsTest : public ::testing::Test {
-  public:
-    StringsTest() { 
-      options.create_if_missing = true;
-      s = db.Open(options, "./db");
-    }
-    virtual ~StringsTest() { }
-    
-    static void SetUpTestCase() { }
-    static void TearDownTestCase() { }
+ public:
+  StringsTest() {
+    options.create_if_missing = true;
+    s = db.Open(options, "./db");
+  }
+  virtual ~StringsTest() { }
 
-    blackwidow::Options options;
-    blackwidow::BlackWidow db;
-    blackwidow::Status s;
+  static void SetUpTestCase() { }
+  static void TearDownTestCase() { }
+
+  blackwidow::Options options;
+  blackwidow::BlackWidow db;
+  blackwidow::Status s;
 };
 
 // Set
@@ -74,11 +74,11 @@ TEST_F(StringsTest, SetrangeTest) {
 
   // If the offset less than 0
   s = db.Setrange("SETRANGE_KEY", -1, "REDIS", &ret);
-  ASSERT_TRUE(s.IsCorruption());
+  ASSERT_TRUE(s.IsInvalidArgument());
 
   // Beyond the maximum offset(2^29-1)
   s = db.Setrange("SETRANGE_KEY", 536870912, "REDIS", &ret);
-  ASSERT_TRUE(s.IsCorruption());
+  ASSERT_TRUE(s.IsInvalidArgument());
 }
 
 // Append
@@ -102,20 +102,20 @@ TEST_F(StringsTest, BitCountTest) {
   int32_t ret;
   s = db.Set("BITCOUNT_KEY", "foobar");
   ASSERT_TRUE(s.ok());
-  
+
   // Not have offset
-  s = db.BitCount("BITCOUNT_KEY", 0, -1, &ret, false); 
+  s = db.BitCount("BITCOUNT_KEY", 0, -1, &ret, false);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(ret, 26);
 
   // Have offset
-  s = db.BitCount("BITCOUNT_KEY", 0, 0, &ret, true); 
+  s = db.BitCount("BITCOUNT_KEY", 0, 0, &ret, true);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(ret, 4);
-  s = db.BitCount("BITCOUNT_KEY", 1, 1, &ret, true); 
+  s = db.BitCount("BITCOUNT_KEY", 1, 1, &ret, true);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(ret, 6);
-} 
+}
 
 // Decrby
 TEST_F(StringsTest, DecrbyTest) {
@@ -129,11 +129,11 @@ TEST_F(StringsTest, DecrbyTest) {
   s = db.Set("DECRBY_KEY", "DECRBY_VALUE");
   ASSERT_TRUE(s.ok());
   s = db.Decrby("DECRBY_KEY", 5, &ret);
-  ASSERT_TRUE(s.IsCorruption());
-  
+  ASSERT_TRUE(s.IsInvalidArgument());
+
   // Less than the minimum number -9223372036854775808
   s = db.Decrby("DECRBY_KEY", 9223372036854775807, &ret);
-  ASSERT_TRUE(s.IsCorruption());
+  ASSERT_TRUE(s.IsInvalidArgument());
 }
 
 int main(int argc, char** argv) {

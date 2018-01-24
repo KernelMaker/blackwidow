@@ -57,7 +57,8 @@ Status BlackWidow::Setnx(const Slice& key, const Slice& value, int32_t* ret) {
   return strings_db_->Setnx(key, value, ret);
 }
 
-Status BlackWidow::Setrange(const Slice& key, int32_t offset, const Slice& value, int32_t* ret) {
+Status BlackWidow::Setrange(const Slice& key, int32_t offset,
+                            const Slice& value, int32_t* ret) {
   return strings_db_->Setrange(key, offset, value, ret);
 }
 
