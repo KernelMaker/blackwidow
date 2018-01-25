@@ -103,9 +103,9 @@ class BlackWidow {
   Status HGet(const Slice& key, const Slice& field, std::string* value);
 
   // Returns if field is an existing field in the hash stored at key.
-  // Return 1 if the hash contains field.
-  // Return 0 if the hash does not contain field, or key does not exist.
-  Status HExists(const Slice& key, const Slice& field, int32_t* ret);
+  // Return Status::Ok() if the hash contains field.
+  // Return Status::NotFound() if the hash does not contain field, or key does not exist.
+  Status HExists(const Slice& key, const Slice& field);
 
   // Keys Commands
   Status Expire(const Slice& key, int32_t ttl);

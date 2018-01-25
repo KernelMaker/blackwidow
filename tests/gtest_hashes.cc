@@ -61,19 +61,16 @@ TEST_F(HashesTest, HExistsTest) {
   s = db.HSet("HEXIST_KEY", "HEXIST_FIELD", "HEXIST_VALUE", &ret);
   ASSERT_TRUE(s.ok());
 
-  s = db.HExists("HEXIST_KEY", "HEXIST_FIELD", &ret);
+  s = db.HExists("HEXIST_KEY", "HEXIST_FIELD");
   ASSERT_TRUE(s.ok());
-  ASSERT_EQ(ret, 1);
 
   // If key does not exist.
-  s = db.HExists("HEXIST_NOT_EXIST_KEY", "HEXIST_FIELD", &ret);
+  s = db.HExists("HEXIST_NOT_EXIST_KEY", "HEXIST_FIELD");
   ASSERT_TRUE(s.IsNotFound());
-  ASSERT_EQ(ret, 0);
 
   // If field is not present in the hash
-  s = db.HExists("HEXIST_KEY", "HEXIST_NOT_EXIST_FIELD", &ret);
+  s = db.HExists("HEXIST_KEY", "HEXIST_NOT_EXIST_FIELD");
   ASSERT_TRUE(s.IsNotFound());
-  ASSERT_EQ(ret, 0);
 }
 
 int main(int argc, char** argv) {

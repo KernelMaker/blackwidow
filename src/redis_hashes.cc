@@ -133,16 +133,9 @@ Status RedisHashes::HGet(const Slice& key, const Slice& field,
   return s;
 }
 
-Status RedisHashes::HExists(const Slice& key, const Slice& field,
-    int32_t* ret) {
+Status RedisHashes::HExists(const Slice& key, const Slice& field) {
   std::string value;
-  Status s = HGet(key, field, &value);
-  if (s.ok()) {
-    *ret = 1;
-  } else {
-    *ret = 0;
-  }
-  return s;
+  return HGet(key, field, &value);
 }
 
 Status RedisHashes::Expire(const Slice& key, int32_t ttl) {
