@@ -88,10 +88,24 @@ class BlackWidow {
   // is returned when key holds a non-string value.
   Status Strlen(const Slice& key, int32_t* len);
 
+
   // Hashes Commands
+
+  // Sets field in the hash stored at key to value. If key does not exist, a new
+  // key holding a hash is created. If field already exists in the hash, it is
+  // overwritten.
   Status HSet(const Slice& key, const Slice& field, const Slice& value,
               int32_t* res);
+
+  // Returns the value associated with field in the hash stored at key.
+  // the value associated with field, or nil when field is not present in the
+  // hash or key does not exist.
   Status HGet(const Slice& key, const Slice& field, std::string* value);
+
+  // Returns if field is an existing field in the hash stored at key.
+  // Return 1 if the hash contains field.
+  // Return 0 if the hash does not contain field, or key does not exist.
+  Status HExists(const Slice& key, const Slice& field, int32_t* ret);
 
   // Keys Commands
   Status Expire(const Slice& key, int32_t ttl);

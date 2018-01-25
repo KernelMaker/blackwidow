@@ -31,9 +31,10 @@ CXXFLAGS+= -I$(BLACKWIDOW_PATH) -I$(BLACKWIDOW_INCLUDE_DIR) -I$(ROCKSDB_INCLUDE_
 DEP_LIBS = $(BLACKWIDOW_LIBRARY) $(ROCKSDB_LIBRARY) $(GOOGLETEST_LIBRARY)
 LDFLAGS := $(DEP_LIBS) $(LDFLAGS)
 
-all: GOOGLETEST ROCKSDB lock_mgr gtest_strings
+all: GOOGLETEST ROCKSDB lock_mgr gtest_strings gtest_hashes
 	mkdir db
 	./gtest_strings
+	./gtest_hashes
 	rm -rf db
 
 GOOGLETEST:
@@ -48,6 +49,9 @@ lock_mgr: lock_mgr.cc
 gtest_strings: gtest_strings.cc
 	$(CXX) $(CXXFLAGS) $^ -o$@ $(LDFLAGS)
 
+gtest_hashes: gtest_hashes.cc
+	$(CXX) $(CXXFLAGS) $^ -o$@ $(LDFLAGS)
+
 clean:
 	find . -name "*.[oda]" -exec rm -f {} \;
-	rm -rf ./lock_mgr ./gtest_strings
+	rm -rf ./lock_mgr ./gtest_strings ./gtest_hashes

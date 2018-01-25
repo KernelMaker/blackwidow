@@ -74,5 +74,11 @@ int main() {
   s = db.HGet("TEST_KEY2", "TEST_FIELD3", &value);
   printf("HGet return: %s, value = %s\n", s.ToString().c_str(), value.c_str());
 
+  // Exists
+  s = db.HSet("TEST_KEY1", "TEST_FIELD1", "TEST_VALUE1", &res);
+  printf("HSet return: %s, res = %d\n", s.ToString().c_str(), res);
+  s = db.HExists("TEST_KEY1", "TEST_FIELD1", &res);
+  printf("HExists return: %s, res = %d\n", s.ToString().c_str(), res);
+
   return 0;
 }

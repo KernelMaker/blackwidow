@@ -105,6 +105,10 @@ Status BlackWidow::HGet(const Slice& key, const Slice& field,
   return hashes_db_->HGet(key, field, value);
 }
 
+Status BlackWidow::HExists(const Slice& key, const Slice& field, int32_t* ret) {
+  return hashes_db_->HExists(key, field, ret);
+}
+
 // Keys Commands
 Status BlackWidow::Expire(const Slice& key, int32_t ttl) {
   Status s = strings_db_->Expire(key, ttl);
