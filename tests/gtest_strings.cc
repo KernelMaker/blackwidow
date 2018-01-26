@@ -214,16 +214,16 @@ TEST_F(StringsTest, StrlenTest) {
 // Expire
 TEST_F(StringsTest, ExpireTest) {
   std::string value;
-  std::vector<BlackWidow::KeyStatus> key_status;
+  std::map<BlackWidow::DataType, Status> type_status;
   int32_t ret;
   s = db.Set("EXPIRE_KEY", "EXPIREVALUE");
   ASSERT_TRUE(s.ok());
-  db.Expire("EXPIRE_KEY", 1, &key_status);
-  for (auto item : key_status) {
-    if (item.type == BlackWidow::KeyStatus::STRINGS) {
-      ASSERT_TRUE(item.status.ok());
+  db.Expire("EXPIRE_KEY", 1, &type_status);
+  for (auto it = type_status.begin(); it != type_status.end(); it++) {
+    if (it->first == BlackWidow::DataType::STRINGS) {
+      ASSERT_TRUE(it->second.ok());
     } else {
-      ASSERT_TRUE(item.status.IsNotFound());
+      ASSERT_TRUE(it->second.IsNotFound());
     }
   }
   std::this_thread::sleep_for(std::chrono::milliseconds(2500));

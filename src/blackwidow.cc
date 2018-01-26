@@ -110,29 +110,65 @@ Status BlackWidow::HExists(const Slice& key, const Slice& field) {
 }
 
 // Keys Commands
-void BlackWidow::Expire(const Slice& key, int32_t ttl, std::vector<KeyStatus>* key_status) {
-  KeyStatus ret_status;
+int BlackWidow::Expire(const Slice& key, int32_t ttl, std::map<DataType, Status>* type_status) {
+  int ret = 0;
+  bool is_corruption = false;
 
   // Strings
   Status s = strings_db_->Expire(key, ttl);
-  ret_status.type = KeyStatus::STRINGS;
-  ret_status.status = s;
-  key_status->push_back(ret_status);
+  if (s.ok()) {
+    ret++; 
+  } else if (!s.IsNotFound()) {
+    is_corruption = true;
+  }
+  (*type_status)[DataType::STRINGS] = s;
 
   // Hash
   s = hashes_db_->Expire(key, ttl);
-  ret_status.type = KeyStatus::HASHES;
-  ret_status.status = s;
-  key_status->push_back(ret_status);
+  if (s.ok()) {
+    ret++;
+  } else if (!s.IsNotFound()) {
+    is_corruption = true;
+  }
+  (*type_status)[DataType::HASHES] = s;
+
+  if (is_corruption) {
+    return -1;
+  } else {
+    return ret;
+  }
 }
 
-Status BlackWidow::Del(const Slice& key) {
-  Status s = strings_db_->Del(key);
-  if (!s.ok() && !s.IsNotFound()) {
-    return s;
+int BlackWidow::Del(const std::vector<Slice>& keys, std::map<DataType, Status>* type_status) {
+  Status s;
+  int count = 0;
+  bool is_corruption = false;
+
+  for (const auto& key : keys) {
+    // Strings
+    Status s = strings_db_->Del(key);
+    if (s.ok()) {
+      count++;
+    } else if (!s.ok() && !s.IsNotFound()) {
+      is_corruption = true;
+    }
+    (*type_status)[DataType::STRINGS] = s;
+
+    // Hashes
+    s = hashes_db_->Del(key);
+    if (s.ok()) {
+      count++;
+    } else if (!s.ok() && !s.IsNotFound()) {
+      is_corruption = true;
+    }
+    (*type_status)[DataType::HASHES] = s;
   }
-  s = hashes_db_->Del(key);
-  return s;
+
+  if (is_corruption) {
+    return -1;
+  } else {
+    return count;
+  }
 }
 
 }  //  namespace blackwidow

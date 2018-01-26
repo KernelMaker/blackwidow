@@ -108,19 +108,16 @@ class BlackWidow {
   Status HExists(const Slice& key, const Slice& field);
 
   // Keys Commands
-  struct KeyStatus {
-    enum {
-      STRINGS,
-      HASHES,
-      LISTS,
-      SETS,
-      ZSETS
-    } type;
-    Status status;
+  enum DataType{
+    STRINGS,
+    HASHES,
+    LISTS,
+    SETS,
+    ZSETS
   };
 
-  void Expire(const Slice& key, int32_t ttl, std::vector<KeyStatus>* key_status);
-  Status Del(const Slice& key);
+  int Expire(const Slice& key, int32_t ttl, std::map<DataType, Status>* type_status);
+  int Del(const std::vector<Slice>& keys, std::map<DataType, Status>* type_status);
 
  private:
   RedisStrings* strings_db_;
