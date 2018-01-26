@@ -71,6 +71,7 @@ Status RedisHashes::HSet(const Slice& key, const Slice& field,
     if (parsed.IsStale()) {
       version = parsed.UpdateVersion();
       parsed.set_count(1);
+      parsed.set_timestamp(0);
       batch.Put(handles_[0], key, meta_value);
       HashesDataKey data_key(key, version, field);
       batch.Put(handles_[1], data_key.Encode(), value);
