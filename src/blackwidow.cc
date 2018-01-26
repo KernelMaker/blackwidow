@@ -77,8 +77,8 @@ Status BlackWidow::Append(const Slice& key, const Slice& value, int32_t* ret) {
   return strings_db_->Append(key, value, ret);
 }
 
-Status BlackWidow::BitCount(const Slice& key, int32_t start_offset, int32_t end_offset,
-                            int32_t *ret, bool have_range) {
+Status BlackWidow::BitCount(const Slice& key, int32_t start_offset,
+                            int32_t end_offset, int32_t *ret, bool have_range) {
   return strings_db_->BitCount(key, start_offset, end_offset, ret, have_range);
 }
 

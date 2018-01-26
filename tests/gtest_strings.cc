@@ -54,7 +54,8 @@ TEST_F(StringsTest, MSetTest) {
 // MGet
 TEST_F(StringsTest, MGetTest) {
   std::vector<std::string> values;
-  std::vector<rocksdb::Slice> keys {"", "MSET_TEST_KEY1", "MSET_TEST_KEY2", "MSET_TEST_KEY3", "MSET_TEST_KEY_NOT_EXIST"};
+  std::vector<rocksdb::Slice> keys {"", "MSET_TEST_KEY1",
+    "MSET_TEST_KEY2", "MSET_TEST_KEY3", "MSET_TEST_KEY_NOT_EXIST"};
   s = db.MGet(keys, &values);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(values.size(), 5);

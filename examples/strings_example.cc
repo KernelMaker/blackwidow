@@ -30,7 +30,8 @@ int main() {
   // Setnx
   int32_t ret;
   s = db.Setnx("TEST_KEY", "TEST_VALUE", &ret);
-  printf("Setnx return: %s, value: %s, ret: %d\n", s.ToString().c_str(), value.c_str(), ret);
+  printf("Setnx return: %s, value: %s, ret: %d\n",
+      s.ToString().c_str(), value.c_str(), ret);
 
   // Setrange
   s = db.Setrange("TEST_KEY", 10, "APPEND_VALUE", &ret);
@@ -41,7 +42,8 @@ int main() {
   s = db.Set("TEST_KEY", "TEST_VALUE");
   s = db.Append("TEST_KEY", "APPEND_VALUE", &ret);
   s = db.Get("TEST_KEY", &append_value);
-  printf("Append return: %s, value: %s, ret: %d\n", s.ToString().c_str(), append_value.c_str(), ret);
+  printf("Append return: %s, value: %s, ret: %d\n",
+      s.ToString().c_str(), append_value.c_str(), ret);
 
   // BitCount
   s = db.BitCount("TEST_KEY", 0, -1, &ret, false);
@@ -91,11 +93,13 @@ int main() {
 
   // MGet
   std::vector<std::string> values;
-  std::vector<rocksdb::Slice> keys {"TEST_KEY1", "TEST_KEY2", "TEST_KEY_NOT_EXIST"};
+  std::vector<rocksdb::Slice> keys {"TEST_KEY1",
+      "TEST_KEY2", "TEST_KEY_NOT_EXIST"};
   s = db.MGet(keys, &values);
   printf("MGet return: %s\n", s.ToString().c_str());
   for (uint32_t idx = 0; idx != keys.size(); idx++) {
-    printf("idx = %d, keys = %s, value = %s\n", idx, keys[idx].ToString().c_str(), values[idx].c_str());
+    printf("idx = %d, keys = %s, value = %s\n",
+        idx, keys[idx].ToString().c_str(), values[idx].c_str());
   }
 
   return 0;
