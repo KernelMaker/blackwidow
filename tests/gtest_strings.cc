@@ -9,6 +9,8 @@
 
 #include "blackwidow/blackwidow.h"
 
+using namespace blackwidow;
+
 class StringsTest : public ::testing::Test {
  public:
   StringsTest() {
@@ -41,7 +43,7 @@ TEST_F(StringsTest, GetTest) {
 
 // MSet
 TEST_F(StringsTest, MSetTest) {
-  std::vector<blackwidow::BlackWidow::KeyValue> kvs;
+  std::vector<BlackWidow::KeyValue> kvs;
   kvs.push_back({"", "MSET_EMPTY_VALUE"});
   kvs.push_back({"MSET_TEST_KEY1", "MSET_TEST_VALUE1"});
   kvs.push_back({"MSET_TEST_KEY2", "MSET_TEST_VALUE2"});
@@ -212,11 +214,18 @@ TEST_F(StringsTest, StrlenTest) {
 // Expire
 TEST_F(StringsTest, ExpireTest) {
   std::string value;
+  std::vector<BlackWidow::KeyStatus> key_status;
   int32_t ret;
   s = db.Set("EXPIRE_KEY", "EXPIREVALUE");
   ASSERT_TRUE(s.ok());
-  s = db.Expire("EXPIRE_KEY", 1, &ret);
-  ASSERT_TRUE(s.ok());
+  db.Expire("EXPIRE_KEY", 1, &key_status);
+  for (auto item : key_status) {
+    if (item.type == BlackWidow::KeyStatus::STRINGS) {
+      ASSERT_TRUE(item.status.ok());
+    } else {
+      ASSERT_TRUE(item.status.IsNotFound());
+    }
+  }
   std::this_thread::sleep_for(std::chrono::milliseconds(2500));
   s = db.Get("EXPIRE_KEY", &value);
   ASSERT_TRUE(s.IsNotFound());

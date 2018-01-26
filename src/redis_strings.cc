@@ -337,9 +337,8 @@ Status RedisStrings::Strlen(const Slice& key, int32_t *len) {
   return s;
 }
 
-Status RedisStrings::Expire(const Slice& key, int32_t ttl, int32_t* ret) {
+Status RedisStrings::Expire(const Slice& key, int32_t ttl) {
   std::string value;
-  *ret = 0;
   ScopeRecordLock l(lock_mgr_, key);
   Status s = db_->Get(default_read_options_, key, &value);
   if (s.ok()) {
@@ -349,10 +348,7 @@ Status RedisStrings::Expire(const Slice& key, int32_t ttl, int32_t* ret) {
     }
     if (ttl > 0) {
       parsed_strings_value.SetRelativeTimestamp(ttl);
-      s = db_->Put(default_write_options_, key, value);
-      if (s.ok()) {
-        *ret = 1;
-      }
+      return db_->Put(default_write_options_, key, value);
     } else {
       return db_->Delete(default_write_options_, key);
     }

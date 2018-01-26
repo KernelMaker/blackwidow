@@ -108,7 +108,18 @@ class BlackWidow {
   Status HExists(const Slice& key, const Slice& field);
 
   // Keys Commands
-  Status Expire(const Slice& key, int32_t ttl, int32_t* ret);
+  struct KeyStatus {
+    enum {
+      STRINGS,
+      HASHES,
+      LISTS,
+      SETS,
+      ZSETS
+    } type;
+    Status status;
+  };
+
+  void Expire(const Slice& key, int32_t ttl, std::vector<KeyStatus>* key_status);
   Status Del(const Slice& key);
 
  private:
