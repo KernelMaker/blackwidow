@@ -110,21 +110,38 @@ Status BlackWidow::HExists(const Slice& key, const Slice& field) {
 }
 
 // Keys Commands
-Status BlackWidow::Expire(const Slice& key, int32_t ttl) {
-  Status s = strings_db_->Expire(key, ttl);
-  if (!s.ok() && !s.IsNotFound()) {
+Status BlackWidow::Expire(const Slice& key, int32_t ttl, int32_t* ret) {
+  bool count = false;
+  // Strings
+  Status s = strings_db_->Expire(key, ttl, ret);
+  if (s.ok()) {
+    count = true;
+  } else if (!s.IsNotFound()) {
     return s;
   }
-  s = hashes_db_->Expire(key, ttl);
-  return s;
+
+  // Hash
+  s = hashes_db_->Expire(key, ttl, ret);
+  if (s.ok()) {
+    count = true;
+  } else if (!s.IsNotFound()) {
+    return s;
+  }
+
+  if (count) {
+    *ret = 1;
+    return Status::OK();
+  } else {
+    return Status::NotFound();
+  }
 }
 
-Status BlackWidow::Delete(const Slice& key) {
-  Status s = strings_db_->Delete(key);
+Status BlackWidow::Del(const Slice& key) {
+  Status s = strings_db_->Del(key);
   if (!s.ok() && !s.IsNotFound()) {
     return s;
   }
-  s = hashes_db_->Delete(key);
+  s = hashes_db_->Del(key);
   return s;
 }
 

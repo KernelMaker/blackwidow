@@ -60,10 +60,12 @@ int main() {
   printf("Decrby return: %s, ret: %d\n", s.ToString().c_str(), decrby_ret);
 
   // Expire
-  s = db.Expire("TEST_KEY", 1);
-  printf("Expire return: %s\n", s.ToString().c_str());
+  s = db.Set("EXPIRE_KEY", "EXPIREVALUE");
+  printf("Set return: %s\n", s.ToString().c_str());
+  s = db.Expire("EXPIRE_KEY", 1, &ret);
+  printf("Expire return: %s, ret: %d\n", s.ToString().c_str(), ret);
   std::this_thread::sleep_for(std::chrono::milliseconds(2500));
-  s = db.Get("TEST_KEY", &value);
+  s = db.Get("EXPIRE_KEY", &value);
   printf("Get return: %s, value: %s\n", s.ToString().c_str(), value.c_str());
 
   // Compact
