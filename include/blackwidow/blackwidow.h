@@ -107,6 +107,13 @@ class BlackWidow {
   // Return Status::NotFound() if the hash does not contain field, or key does not exist.
   Status HExists(const Slice& key, const Slice& field);
 
+  // Increments the number stored at field in the hash stored at key by
+  // increment. If key does not exist, a new key holding a hash is created. If
+  // field does not exist the value is set to 0 before the operation is
+  // performed.
+  Status HIncrby(const Slice& key, const Slice& field, int64_t value,
+                 int64_t* ret);
+
   // Keys Commands
   enum DataType{
     STRINGS,

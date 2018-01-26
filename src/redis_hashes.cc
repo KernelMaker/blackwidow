@@ -138,6 +138,75 @@ Status RedisHashes::HExists(const Slice& key, const Slice& field) {
   return HGet(key, field, &value);
 }
 
+Status RedisHashes::HIncrby(const Slice& key, const Slice& field, int64_t value,
+                            int64_t* ret) {
+  rocksdb::WriteBatch batch;
+  rocksdb::ReadOptions read_options;
+  const rocksdb::Snapshot* snapshot;
+
+  int32_t version = 0;
+  std::string old_value;
+  std::string new_value;
+  std::string meta_value;
+
+  ScopeRecordLock l(lock_mgr_, key);
+  ScopeSnapshot ss(db_, &snapshot);
+  read_options.snapshot = snapshot;
+  Status s = db_->Get(read_options, handles_[0], key, &meta_value);
+
+  if (s.ok()) {
+    ParsedHashesMetaValue parsed_hashes_meta_value(&meta_value);
+    if (parsed_hashes_meta_value.IsStale()) {
+      version = parsed_hashes_meta_value.UpdateVersion();
+      parsed_hashes_meta_value.set_count(1);
+      parsed_hashes_meta_value.set_timestamp(0);
+      batch.Put(handles_[0], key, meta_value);
+      HashesDataKey hashes_data_key(key, version, field);
+      new_value = std::to_string(value);
+      batch.Put(handles_[1], hashes_data_key.Encode(), new_value);
+      *ret = value;
+    } else {
+      version = parsed_hashes_meta_value.version();
+      HashesDataKey hashes_data_key(key, version, field);
+      s = db_->Get(read_options, handles_[1],
+              hashes_data_key.Encode(), &old_value);
+      if (s.ok()) {
+        char* end = nullptr;
+        int64_t ival = strtoll(old_value.c_str(), &end, 10);
+        if (*end != 0) {
+          return Status::InvalidArgument("hash value is not an integer");
+        }
+        if ((value >= 0 && LLONG_MAX - value < ival)
+          || (value < 0 && LLONG_MIN - value > ival)) {
+          return Status::InvalidArgument("Overflow");
+        }
+        *ret = ival + value;
+        new_value = std::to_string(*ret);
+        batch.Put(handles_[1], hashes_data_key.Encode(), new_value);
+      } else if (s.IsNotFound()) {
+        new_value = std::to_string(value);
+        parsed_hashes_meta_value.ModifyCount(1);
+        batch.Put(handles_[0], key, meta_value);
+        batch.Put(handles_[1], hashes_data_key.Encode(), new_value);
+        *ret = value;
+      } else {
+        return s;
+      }
+    }
+  } else if (s.IsNotFound()) {
+    char str[4];
+    EncodeFixed32(str, 1);
+    HashesMetaValue hashes_meta_value(std::string(str, sizeof(int32_t)));
+    version = hashes_meta_value.UpdateVersion();
+    batch.Put(handles_[0], key, hashes_meta_value.Encode());
+    HashesDataKey hashes_data_key(key, version, field);
+    new_value = std::to_string(value);
+    batch.Put(handles_[1], hashes_data_key.Encode(), new_value);
+    *ret = value;
+  }
+  return db_->Write(default_write_options_, &batch);
+}
+
 Status RedisHashes::Expire(const Slice& key, int32_t ttl) {
   std::string meta_value;
   ScopeRecordLock l(lock_mgr_, key);

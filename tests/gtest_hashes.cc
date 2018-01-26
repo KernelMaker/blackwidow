@@ -57,7 +57,7 @@ TEST_F(HashesTest, HGetTest) {
 
 // HExists
 TEST_F(HashesTest, HExistsTest) {
-  int ret;
+  int32_t ret;
   s = db.HSet("HEXIST_KEY", "HEXIST_FIELD", "HEXIST_VALUE", &ret);
   ASSERT_TRUE(s.ok());
 
@@ -71,6 +71,50 @@ TEST_F(HashesTest, HExistsTest) {
   // If field is not present in the hash
   s = db.HExists("HEXIST_KEY", "HEXIST_NOT_EXIST_FIELD");
   ASSERT_TRUE(s.IsNotFound());
+}
+
+// HIncrby
+TEST_F(HashesTest, HIncrby) {
+  int32_t ret;
+  int64_t value;
+
+  // If the hash field contains a string that can not be
+  // represented as integer
+  s = db.HSet("HINCRBY_KEY", "HINCRBY_STR_FIELD", "HINCRBY_VALEU", &ret);
+  ASSERT_TRUE(s.ok());
+  s = db.HIncrby("HINCRBY_KEY", "HINCRBY_STR_FIELD", 100, &value);
+  ASSERT_TRUE(s.IsInvalidArgument());
+
+  // If field does not exist the value is set to 0 before the
+  // operation is performed
+  s = db.HIncrby("HINCRBY_KEY", "HINCRBY_NOT_EXIST_FIELD", 100, &value);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(value, 100);
+
+  s = db.HSet("HINCRBY_KEY", "HINCRBY_NUM_FIELD", "100", &ret);
+  ASSERT_TRUE(s.ok());
+
+  // Positive test
+  s = db.HIncrby("HINCRBY_KEY", "HINCRBY_NUM_FIELD", 100, &value);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(value, 200);
+
+  // Negative test
+  s = db.HIncrby("HINCRBY_KEY", "HINCRBY_NUM_FIELD", -100, &value);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(value, 100);
+
+  // Larger than the maximum number 9223372036854775807
+  s = db.HSet("HINCRBY_KEY", "HINCRBY_NUM_FIELD", "10", &ret);
+  ASSERT_TRUE(s.ok());
+  s = db.HIncrby("HINCRBY_KEY", "HINCRBY_NUM_FIELD", 9223372036854775807, &value);
+  ASSERT_TRUE(s.IsInvalidArgument());
+
+  // Less than the minimum number -9223372036854775808
+  s = db.HSet("HINCRBY_KEY", "HINCRBY_NUM_FIELD", "-10", &ret);
+  ASSERT_TRUE(s.ok());
+  s = db.HIncrby("HINCRBY_KEY", "HINCRBY_NUM_FIELD", -9223372036854775807, &value);
+  ASSERT_TRUE(s.IsInvalidArgument());
 }
 
 int main(int argc, char** argv) {

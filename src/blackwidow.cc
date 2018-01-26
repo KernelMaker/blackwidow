@@ -109,6 +109,11 @@ Status BlackWidow::HExists(const Slice& key, const Slice& field) {
   return hashes_db_->HExists(key, field);
 }
 
+Status BlackWidow::HIncrby(const Slice& key, const Slice& field, int64_t value,
+                           int64_t* ret) {
+  return hashes_db_->HIncrby(key, field, value, ret);
+}
+
 // Keys Commands
 int BlackWidow::Expire(const Slice& key, int32_t ttl, std::map<DataType, Status>* type_status) {
   int ret = 0;

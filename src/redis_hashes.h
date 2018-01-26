@@ -23,6 +23,8 @@ class RedisHashes : public Redis {
       int32_t* res);
   Status HGet(const Slice& key, const Slice& field, std::string* value);
   Status HExists(const Slice& key, const Slice& field);
+  Status HIncrby(const Slice& key, const Slice& field, int64_t value,
+                 int64_t* ret);
 
   // Common Commands
   virtual Status Open(const rocksdb::Options& options,
