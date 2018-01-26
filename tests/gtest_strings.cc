@@ -136,6 +136,19 @@ TEST_F(StringsTest, DecrbyTest) {
   ASSERT_TRUE(s.IsInvalidArgument());
 }
 
+// Expire
+TEST_F(StringsTest, ExpireTest) {
+  std::string value;
+  int32_t ret;
+  s = db.Set("EXPIRE_KEY", "EXPIREVALUE");
+  ASSERT_TRUE(s.ok());
+  s = db.Expire("EXPIRE_KEY", 1, &ret);
+  ASSERT_TRUE(s.ok());
+  std::this_thread::sleep_for(std::chrono::milliseconds(2500));
+  s = db.Get("EXPIRE_KEY", &value);
+  ASSERT_TRUE(s.IsNotFound());
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

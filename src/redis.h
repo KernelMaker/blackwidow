@@ -40,8 +40,8 @@ class Redis {
       const rocksdb::Slice* end) = 0;
 
   // Keys Commands
-  virtual Status Expire(const Slice& key, int32_t ttl) = 0;
-  virtual Status Delete(const Slice& key) = 0;
+  virtual Status Expire(const Slice& key, int32_t ttl, int32_t* ret) = 0;
+  virtual Status Del(const Slice& key) = 0;
 
  protected:
   LockMgr* lock_mgr_;

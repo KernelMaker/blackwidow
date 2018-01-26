@@ -69,8 +69,8 @@ class BlackWidow {
   Status HGet(const Slice& key, const Slice& field, std::string* value);
 
   // Keys Commands
-  Status Expire(const Slice& key, int32_t ttl);
-  Status Delete(const Slice& key);
+  Status Expire(const Slice& key, int32_t ttl, int32_t* ret);
+  Status Del(const Slice& key);
 
  private:
   RedisStrings* strings_db_;

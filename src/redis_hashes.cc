@@ -133,7 +133,8 @@ Status RedisHashes::HGet(const Slice& key, const Slice& field,
   return s;
 }
 
-Status RedisHashes::Expire(const Slice& key, int32_t ttl) {
+Status RedisHashes::Expire(const Slice& key, int32_t ttl, int32_t* ret) {
+  *ret = 0;
   std::string meta_value;
   ScopeRecordLock l(lock_mgr_, key);
   Status s = db_->Get(default_read_options_, handles_[0], key, &meta_value);
@@ -142,10 +143,12 @@ Status RedisHashes::Expire(const Slice& key, int32_t ttl) {
     if (parsed.IsStale()) {
       return Status::NotFound("Stale");
     }
-
     if (ttl > 0) {
       parsed.SetRelativeTimestamp(ttl);
-      return db_->Put(default_write_options_, handles_[0], key, meta_value);
+      s = db_->Put(default_write_options_, handles_[0], key, meta_value);
+      if (s.ok()) {
+        *ret = 1;
+      }
     } else {
       return db_->Delete(default_write_options_, handles_[0], key);
     }
@@ -153,7 +156,7 @@ Status RedisHashes::Expire(const Slice& key, int32_t ttl) {
   return s;
 }
 
-Status RedisHashes::Delete(const Slice& key) {
+Status RedisHashes::Del(const Slice& key) {
   std::string meta_value;
   ScopeRecordLock l(lock_mgr_, key);
   Status s = db_->Get(default_read_options_, handles_[0], key, &meta_value);
