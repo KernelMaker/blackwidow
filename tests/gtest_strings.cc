@@ -218,7 +218,7 @@ TEST_F(StringsTest, ExpireTest) {
   int32_t ret;
   s = db.Set("EXPIRE_KEY", "EXPIREVALUE");
   ASSERT_TRUE(s.ok());
-  db.Expire("EXPIRE_KEY", 1, &type_status);
+  ret = db.Expire("EXPIRE_KEY", 1, &type_status);
   for (auto it = type_status.begin(); it != type_status.end(); it++) {
     if (it->first == BlackWidow::DataType::STRINGS) {
       ASSERT_TRUE(it->second.ok());
@@ -229,6 +229,28 @@ TEST_F(StringsTest, ExpireTest) {
   std::this_thread::sleep_for(std::chrono::milliseconds(2500));
   s = db.Get("EXPIRE_KEY", &value);
   ASSERT_TRUE(s.IsNotFound());
+}
+
+// Del
+TEST_F(StringsTest, DelTest) {
+  int32_t ret;
+  std::map<BlackWidow::DataType, Status> type_status;
+  std::vector<rocksdb::Slice> keys {"DEL_KEY"};
+  s = db.Set("DEL_KEY", "EXPIREVALUE");
+  ASSERT_TRUE(s.ok());
+  s = db.HSet("DEL_KEY", "DEL_FIELD", "DEL_VALUE", &ret);
+  ASSERT_TRUE(s.ok());
+  ret = db.Del(keys, &type_status);
+  for (auto it = type_status.begin(); it != type_status.end(); it++) {
+    if (it->first == BlackWidow::DataType::STRINGS) {
+      ASSERT_TRUE(it->second.ok());
+    } else if (it->first == BlackWidow::DataType::HASHES) {
+      ASSERT_TRUE(it->second.ok());
+    } else {
+      ASSERT_TRUE(it->second.IsNotFound());
+    }
+  }
+  ASSERT_EQ(ret, 1);
 }
 
 int main(int argc, char** argv) {

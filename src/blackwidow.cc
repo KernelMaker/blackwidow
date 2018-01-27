@@ -142,13 +142,13 @@ int BlackWidow::Expire(const Slice& key, int32_t ttl, std::map<DataType, Status>
 int BlackWidow::Del(const std::vector<Slice>& keys, std::map<DataType, Status>* type_status) {
   Status s;
   int count = 0;
-  bool is_corruption = false;
+  bool is_corruption = false, is_success = false;
 
   for (const auto& key : keys) {
     // Strings
     Status s = strings_db_->Del(key);
     if (s.ok()) {
-      count++;
+      is_success = true;
     } else if (!s.ok() && !s.IsNotFound()) {
       is_corruption = true;
     }
@@ -157,11 +157,15 @@ int BlackWidow::Del(const std::vector<Slice>& keys, std::map<DataType, Status>* 
     // Hashes
     s = hashes_db_->Del(key);
     if (s.ok()) {
-      count++;
+      is_success = true;
     } else if (!s.ok() && !s.IsNotFound()) {
       is_corruption = true;
     }
     (*type_status)[DataType::HASHES] = s;
+
+    if (is_success) {
+      count++; 
+    }
   }
 
   if (is_corruption) {
