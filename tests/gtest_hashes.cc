@@ -55,6 +55,85 @@ TEST_F(HashesTest, HGetTest) {
   ASSERT_TRUE(s.IsNotFound());
 }
 
+// HMset
+TEST_F(HashesTest, HMsetTest) {
+  int32_t ret = 0;
+  std::vector<blackwidow::BlackWidow::FieldValue> fvs1;
+  fvs1.push_back({"TEST_FIELD1", "TEST_VALUE1"});
+  fvs1.push_back({"TEST_FIELD2", "TEST_VALUE2"});
+
+  // If field already exists in the hash, it is overwritten
+  std::vector<blackwidow::BlackWidow::FieldValue> fvs2;
+  fvs2.push_back({"TEST_FIELD2", "TEST_VALUE2"});
+  fvs2.push_back({"TEST_FIELD3", "TEST_VALUE3"});
+  fvs2.push_back({"TEST_FIELD4", "TEST_VALUE4"});
+  fvs2.push_back({"TEST_FIELD3", "TEST_VALUE5"});
+
+  s = db.HMset("HMSET_KEY", fvs1);
+  ASSERT_TRUE(s.ok());
+  s = db.HMset("HMSET_KEY", fvs2);
+  ASSERT_TRUE(s.ok());
+
+  s = db.HLen("HMSET_KEY", &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 4);
+
+  std::vector<std::string> values;
+  std::vector<rocksdb::Slice> fields {"TEST_FIELD1",
+      "TEST_FIELD2", "TEST_FIELD3", "TEST_FIELD4"};
+  s = db.HMget("HMSET_KEY", fields, &values);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(values.size(),  4);
+
+  ASSERT_EQ(values[0], "TEST_VALUE1");
+  ASSERT_EQ(values[1], "TEST_VALUE2");
+  ASSERT_EQ(values[2], "TEST_VALUE5");
+  ASSERT_EQ(values[3], "TEST_VALUE4");
+}
+
+// HMget
+TEST_F(HashesTest, HMgetTest) {
+  int32_t ret = 0;
+  std::vector<blackwidow::BlackWidow::FieldValue> fvs;
+  fvs.push_back({"TEST_FIELD1", "TEST_VALUE1"});
+  fvs.push_back({"TEST_FIELD2", "TEST_VALUE2"});
+  fvs.push_back({"TEST_FIELD3", "TEST_VALUE3"});
+  fvs.push_back({"TEST_FIELD2", "TEST_VALUE4"});
+  s = db.HMset("HMGET_KEY", fvs);
+  ASSERT_TRUE(s.ok());
+
+  s = db.HLen("HMGET_KEY", &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 3);
+
+  std::vector<std::string> values;
+  std::vector<rocksdb::Slice> fields {"TEST_FIELD1",
+      "TEST_FIELD2", "TEST_FIELD3", "TEST_NOT_EXIST_FIELD"};
+  s = db.HMget("HMGET_KEY", fields, &values);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(values.size(), 4);
+
+  ASSERT_EQ(values[0], "TEST_VALUE1");
+  ASSERT_EQ(values[1], "TEST_VALUE4");
+  ASSERT_EQ(values[2], "TEST_VALUE3");
+  ASSERT_EQ(values[3], "");
+}
+
+// HLen
+TEST_F(HashesTest, HLenTest) {
+  int32_t ret = 0;
+  std::vector<blackwidow::BlackWidow::FieldValue> fvs;
+  fvs.push_back({"TEST_FIELD1", "TEST_VALUE1"});
+  fvs.push_back({"TEST_FIELD2", "TEST_VALUE2"});
+  fvs.push_back({"TEST_FIELD3", "TEST_VALUE3"});
+  s = db.HMset("HLEN_KEY", fvs);
+  ASSERT_TRUE(s.ok());
+
+  s = db.HLen("HLEN_KEY", &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 3);
+}
+
 // HExists
 TEST_F(HashesTest, HExistsTest) {
   int32_t ret;
