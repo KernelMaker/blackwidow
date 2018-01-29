@@ -45,6 +45,29 @@ int main() {
   s = db.HGet("TEST_KEY_NOT_EXIST", "TEST_FIELD", &value);
   printf("HGet return: %s, value = %s\n", s.ToString().c_str(), value.c_str());
 
+  // HMset
+  std::vector<blackwidow::BlackWidow::FieldValue> fvs;
+  fvs.push_back({"TEST_FIELD1", "TEST_VALUE1"});
+  fvs.push_back({"TEST_FIELD2", "TEST_VALUE2"});
+  s = db.HMset("TEST_HASH", fvs);
+  printf("HMset return: %s\n", s.ToString().c_str());
+
+  // HMget
+  std::vector<rocksdb::Slice> fields;
+  std::vector<std::string> values;
+  fields.push_back("TEST_FIELD1");
+  fields.push_back("TEST_FIELD2");
+  s = db.HMget("TEST_HASH", fields, &values);
+  printf("HMget return: %s\n", s.ToString().c_str());
+  for (uint32_t idx = 0; idx != fields.size(); idx++) {
+    printf("idx = %d, field = %s, value = %s\n",
+        idx, fields[idx].ToString().c_str(), values[idx].c_str());
+  }
+
+  // HLEN
+  s = db.HLen("TEST_HASH", &res);
+  printf("HLen return : %s, len = %d\n", s.ToString().c_str(), res);
+
   // Compact
   s = db.Compact();
   printf("Compact return: %s\n", s.ToString().c_str());

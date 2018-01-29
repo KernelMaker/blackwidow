@@ -105,6 +105,21 @@ Status BlackWidow::HGet(const Slice& key, const Slice& field,
   return hashes_db_->HGet(key, field, value);
 }
 
+Status BlackWidow::HMset(const Slice& key,
+                         const std::vector<BlackWidow::FieldValue>& fvs) {
+  return hashes_db_->HMset(key, fvs);
+}
+
+Status BlackWidow::HMget(const Slice& key,
+                         const std::vector<Slice>& fields,
+                         std::vector<std::string>* values) {
+  return hashes_db_->HMget(key, fields, values);
+}
+
+Status BlackWidow::HLen(const Slice& key, int32_t* ret) {
+  return hashes_db_->HLen(key, ret);
+}
+
 Status BlackWidow::HExists(const Slice& key, const Slice& field) {
   return hashes_db_->HExists(key, field);
 }

@@ -90,6 +90,10 @@ class BlackWidow {
 
 
   // Hashes Commands
+  struct FieldValue {
+    Slice field;
+    Slice value;
+  };
 
   // Sets field in the hash stored at key to value. If key does not exist, a new
   // key holding a hash is created. If field already exists in the hash, it is
@@ -101,6 +105,25 @@ class BlackWidow {
   // the value associated with field, or nil when field is not present in the
   // hash or key does not exist.
   Status HGet(const Slice& key, const Slice& field, std::string* value);
+
+  // Sets the specified fields to their respective values in the hash stored at
+  // key. This command overwrites any specified fields already existing in the
+  // hash. If key does not exist, a new key holding a hash is created.
+  Status HMset(const Slice& key,
+               const std::vector<BlackWidow::FieldValue>& fvs);
+
+  // Returns the values associated with the specified fields in the hash stored
+  // at key.
+  // For every field that does not exist in the hash, a nil value is returned.
+  // Because a non-existing keys are treated as empty hashes, running HMGET
+  // against a non-existing key will return a list of nil values.
+  Status HMget(const Slice& key,
+               const std::vector<Slice>& fields,
+               std::vector<std::string>* values);
+
+  // Returns the number of fields contained in the hash stored at key.
+  // Return 0 when key does not exist.
+  Status HLen(const Slice& key, int32_t* ret);
 
   // Returns if field is an existing field in the hash stored at key.
   // Return Status::Ok() if the hash contains field.

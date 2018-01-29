@@ -8,8 +8,10 @@
 
 #include <string>
 #include <vector>
+#include <unordered_set>
 
 #include "src/redis.h"
+#include "blackwidow/blackwidow.h"
 
 namespace blackwidow {
 
@@ -22,6 +24,10 @@ class RedisHashes : public Redis {
   Status HSet(const Slice& key, const Slice& field, const Slice& value,
       int32_t* res);
   Status HGet(const Slice& key, const Slice& field, std::string* value);
+  Status HMset(const Slice& key, const std::vector<BlackWidow::FieldValue>& fvs);
+  Status HMget(const Slice& key, const std::vector<Slice>& fields,
+               std::vector<std::string>* values);
+  Status HLen(const Slice& key, int32_t* ret);
   Status HExists(const Slice& key, const Slice& field);
   Status HIncrby(const Slice& key, const Slice& field, int64_t value,
                  int64_t* ret);
