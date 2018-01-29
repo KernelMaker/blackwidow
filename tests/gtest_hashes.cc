@@ -55,8 +55,8 @@ TEST_F(HashesTest, HGetTest) {
   ASSERT_TRUE(s.IsNotFound());
 }
 
-// HMset
-TEST_F(HashesTest, HMsetTest) {
+// HMSet
+TEST_F(HashesTest, HMSetTest) {
   int32_t ret = 0;
   std::vector<blackwidow::BlackWidow::FieldValue> fvs1;
   fvs1.push_back({"TEST_FIELD1", "TEST_VALUE1"});
@@ -69,37 +69,65 @@ TEST_F(HashesTest, HMsetTest) {
   fvs2.push_back({"TEST_FIELD4", "TEST_VALUE4"});
   fvs2.push_back({"TEST_FIELD3", "TEST_VALUE5"});
 
-  s = db.HMset("HMSET_KEY", fvs1);
+  s = db.HMSet("HMSET_KEY", fvs1);
   ASSERT_TRUE(s.ok());
-  s = db.HMset("HMSET_KEY", fvs2);
+  s = db.HMSet("HMSET_KEY", fvs2);
   ASSERT_TRUE(s.ok());
 
   s = db.HLen("HMSET_KEY", &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(ret, 4);
 
-  std::vector<std::string> values;
-  std::vector<rocksdb::Slice> fields {"TEST_FIELD1",
+  std::vector<std::string> values1;
+  std::vector<rocksdb::Slice> fields1 {"TEST_FIELD1",
       "TEST_FIELD2", "TEST_FIELD3", "TEST_FIELD4"};
-  s = db.HMget("HMSET_KEY", fields, &values);
+  s = db.HMGet("HMSET_KEY", fields1, &values1);
   ASSERT_TRUE(s.ok());
-  ASSERT_EQ(values.size(),  4);
+  ASSERT_EQ(values1.size(),  4);
 
-  ASSERT_EQ(values[0], "TEST_VALUE1");
-  ASSERT_EQ(values[1], "TEST_VALUE2");
-  ASSERT_EQ(values[2], "TEST_VALUE5");
-  ASSERT_EQ(values[3], "TEST_VALUE4");
+  ASSERT_EQ(values1[0], "TEST_VALUE1");
+  ASSERT_EQ(values1[1], "TEST_VALUE2");
+  ASSERT_EQ(values1[2], "TEST_VALUE5");
+  ASSERT_EQ(values1[3], "TEST_VALUE4");
+
+  std::map<blackwidow::BlackWidow::DataType, rocksdb::Status> type_status;
+  db.Expire("HMSET_KEY", 1, &type_status);
+  ASSERT_TRUE(type_status[blackwidow::BlackWidow::DataType::HASHES].ok());
+
+  // The key has timeout
+  std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+  std::vector<blackwidow::BlackWidow::FieldValue> fvs3;
+  fvs3.push_back({"TEST_FIELD3", "TEST_VALUE3"});
+  fvs3.push_back({"TEST_FIELD4", "TEST_VALUE4"});
+  fvs3.push_back({"TEST_FIELD5", "TEST_VALUE5"});
+  s = db.HMSet("HMSET_KEY", fvs3);
+  ASSERT_TRUE(s.ok());
+
+  s = db.HLen("HMSET_KEY", &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 3);
+
+  std::vector<std::string> values2;
+  std::vector<rocksdb::Slice> fields2 {"TEST_FIELD3",
+      "TEST_FIELD4", "TEST_FIELD5"};
+  s = db.HMGet("HMSET_KEY", fields2, &values2);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(values2.size(),  3);
+
+  ASSERT_EQ(values2[0], "TEST_VALUE3");
+  ASSERT_EQ(values2[1], "TEST_VALUE4");
+  ASSERT_EQ(values2[2], "TEST_VALUE5");
 }
 
-// HMget
-TEST_F(HashesTest, HMgetTest) {
+// HMGet
+TEST_F(HashesTest, HMGetTest) {
   int32_t ret = 0;
   std::vector<blackwidow::BlackWidow::FieldValue> fvs;
   fvs.push_back({"TEST_FIELD1", "TEST_VALUE1"});
   fvs.push_back({"TEST_FIELD2", "TEST_VALUE2"});
   fvs.push_back({"TEST_FIELD3", "TEST_VALUE3"});
   fvs.push_back({"TEST_FIELD2", "TEST_VALUE4"});
-  s = db.HMset("HMGET_KEY", fvs);
+  s = db.HMSet("HMGET_KEY", fvs);
   ASSERT_TRUE(s.ok());
 
   s = db.HLen("HMGET_KEY", &ret);
@@ -109,7 +137,7 @@ TEST_F(HashesTest, HMgetTest) {
   std::vector<std::string> values;
   std::vector<rocksdb::Slice> fields {"TEST_FIELD1",
       "TEST_FIELD2", "TEST_FIELD3", "TEST_NOT_EXIST_FIELD"};
-  s = db.HMget("HMGET_KEY", fields, &values);
+  s = db.HMGet("HMGET_KEY", fields, &values);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(values.size(), 4);
 
@@ -126,7 +154,7 @@ TEST_F(HashesTest, HLenTest) {
   fvs.push_back({"TEST_FIELD1", "TEST_VALUE1"});
   fvs.push_back({"TEST_FIELD2", "TEST_VALUE2"});
   fvs.push_back({"TEST_FIELD3", "TEST_VALUE3"});
-  s = db.HMset("HLEN_KEY", fvs);
+  s = db.HMSet("HLEN_KEY", fvs);
   ASSERT_TRUE(s.ok());
 
   s = db.HLen("HLEN_KEY", &ret);

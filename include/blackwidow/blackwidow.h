@@ -109,7 +109,7 @@ class BlackWidow {
   // Sets the specified fields to their respective values in the hash stored at
   // key. This command overwrites any specified fields already existing in the
   // hash. If key does not exist, a new key holding a hash is created.
-  Status HMset(const Slice& key,
+  Status HMSet(const Slice& key,
                const std::vector<BlackWidow::FieldValue>& fvs);
 
   // Returns the values associated with the specified fields in the hash stored
@@ -117,7 +117,7 @@ class BlackWidow {
   // For every field that does not exist in the hash, a nil value is returned.
   // Because a non-existing keys are treated as empty hashes, running HMGET
   // against a non-existing key will return a list of nil values.
-  Status HMget(const Slice& key,
+  Status HMGet(const Slice& key,
                const std::vector<Slice>& fields,
                std::vector<std::string>* values);
 

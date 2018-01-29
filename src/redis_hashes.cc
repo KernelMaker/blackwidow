@@ -135,7 +135,7 @@ Status RedisHashes::HGet(const Slice& key, const Slice& field,
   return s;
 }
 
-Status RedisHashes::HMset(const Slice& key,
+Status RedisHashes::HMSet(const Slice& key,
                           const std::vector<BlackWidow::FieldValue>& fvs) {
   std::unordered_set<std::string> fields;
   std::vector<BlackWidow::FieldValue> filtered_fvs;
@@ -201,7 +201,7 @@ Status RedisHashes::HMset(const Slice& key,
   return db_->Write(default_write_options_, &batch);
 }
 
-Status RedisHashes::HMget(const Slice& key,
+Status RedisHashes::HMGet(const Slice& key,
                           const std::vector<Slice>& fields,
                           std::vector<std::string>* values) {
   int32_t version = 0;
