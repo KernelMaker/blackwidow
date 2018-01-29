@@ -139,9 +139,8 @@ Status RedisHashes::HMset(const Slice& key,
                           const std::vector<BlackWidow::FieldValue>& fvs) {
   std::unordered_set<std::string> fields;
   std::vector<BlackWidow::FieldValue> filtered_fvs;
-  std::vector<BlackWidow::FieldValue>::const_reverse_iterator iter;
-  for (iter = fvs.rbegin(); iter != fvs.rend(); ++iter) {
-    std::string field = (*iter).field.ToString();
+  for (auto iter = fvs.rbegin(); iter != fvs.rend(); ++iter) {
+    std::string field = iter->field.ToString();
     if (fields.find(field) == fields.end()) {
       fields.insert(field);
       filtered_fvs.push_back(*iter);
