@@ -156,6 +156,17 @@ TEST_F(HashesTest, HExistsTest) {
 TEST_F(HashesTest, HIncrby) {
   int32_t ret;
   int64_t value;
+  std::string str_value;
+
+  // If key does not exist the value is set to 0 before the
+  // operation is performed
+  s = db.HIncrby("HINCRBY_NEW_KEY", "HINCRBY_EXIST_FIELD", 1000, &value);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(value, 1000);
+  s = db.HGet("HINCRBY_NEW_KEY", "HINCRBY_EXIST_FIELD", &str_value);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(atoll(str_value.data()), 1000);
+
 
   // If the hash field contains a string that can not be
   // represented as integer
@@ -169,6 +180,9 @@ TEST_F(HashesTest, HIncrby) {
   s = db.HIncrby("HINCRBY_KEY", "HINCRBY_NOT_EXIST_FIELD", 100, &value);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(value, 100);
+  s = db.HGet("HINCRBY_KEY", "HINCRBY_NOT_EXIST_FIELD", &str_value);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(atoll(str_value.data()), 100);
 
   s = db.HSet("HINCRBY_KEY", "HINCRBY_NUM_FIELD", "100", &ret);
   ASSERT_TRUE(s.ok());
@@ -177,11 +191,17 @@ TEST_F(HashesTest, HIncrby) {
   s = db.HIncrby("HINCRBY_KEY", "HINCRBY_NUM_FIELD", 100, &value);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(value, 200);
+  s = db.HGet("HINCRBY_KEY", "HINCRBY_NUM_FIELD", &str_value);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(atoll(str_value.data()), 200);
 
   // Negative test
   s = db.HIncrby("HINCRBY_KEY", "HINCRBY_NUM_FIELD", -100, &value);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(value, 100);
+  s = db.HGet("HINCRBY_KEY", "HINCRBY_NUM_FIELD", &str_value);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(atoll(str_value.data()), 100);
 
   // Larger than the maximum number 9223372036854775807
   s = db.HSet("HINCRBY_KEY", "HINCRBY_NUM_FIELD", "10", &ret);
