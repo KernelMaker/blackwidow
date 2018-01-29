@@ -149,7 +149,7 @@ int BlackWidow::Del(const std::vector<Slice>& keys, std::map<DataType, Status>* 
     Status s = strings_db_->Del(key);
     if (s.ok()) {
       is_success = true;
-    } else if (!s.ok() && !s.IsNotFound()) {
+    } else if (!s.IsNotFound()) {
       is_corruption = true;
     }
     (*type_status)[DataType::STRINGS] = s;
@@ -158,7 +158,7 @@ int BlackWidow::Del(const std::vector<Slice>& keys, std::map<DataType, Status>* 
     s = hashes_db_->Del(key);
     if (s.ok()) {
       is_success = true;
-    } else if (!s.ok() && !s.IsNotFound()) {
+    } else if (!s.IsNotFound()) {
       is_corruption = true;
     }
     (*type_status)[DataType::HASHES] = s;
