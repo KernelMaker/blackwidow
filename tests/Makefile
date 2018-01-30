@@ -1,13 +1,17 @@
 CXX=g++
 CXXFLAGS=-O2 -std=c++11 -fno-builtin-memcmp -msse -msse4.2
+PROCESSOR_NUMS= 24
 
 .PHONY: clean all
 
+<<<<<<< HEAD
 # Get processor numbers
 dummy := $(shell ("$(CURDIR)/../detect_environment" "$(CURDIR)/make_config.mk"))
 include make_config.mk
 LDFLAGS = -lpthread -lrt $(ROCKSDB_LDFLAGS)
 
+=======
+>>>>>>> update Makefile
 ifndef BLACKWIDOW_PATH
   $(warning Warning: missing blackwidow path, using default)
   BLACKWIDOW_PATH=..
