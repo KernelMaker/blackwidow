@@ -1,6 +1,5 @@
 CXX=g++
 CXXFLAGS=-O2 -std=c++11 -fno-builtin-memcmp -msse -msse4.2
-PROCESSOR_NUMS= 24
 
 .PHONY: clean all
 

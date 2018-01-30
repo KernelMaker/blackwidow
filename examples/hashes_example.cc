@@ -111,4 +111,3 @@ int main() {
   s = db.HIncrby("TEST_KEY1", "TEST_HINCRBY_FIELD", 100, &hincrby_value);
   printf("HIncrby return: %s, value = %lld\n", s.ToString().c_str(), hincrby_value);
   return 0;
-}
