@@ -106,7 +106,7 @@ Status BlackWidow::HGet(const Slice& key, const Slice& field,
 }
 
 Status BlackWidow::HMSet(const Slice& key,
-                         const std::vector<BlackWidow::FieldValue>& fvs) {
+                         const std::vector<BlackWidow::SliceFieldValue>& fvs) {
   return hashes_db_->HMSet(key, fvs);
 }
 

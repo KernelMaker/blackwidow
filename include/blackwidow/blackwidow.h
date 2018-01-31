@@ -90,7 +90,7 @@ class BlackWidow {
 
 
   // Hashes Commands
-  struct FieldValue {
+  struct SliceFieldValue {
     Slice field;
     Slice value;
   };
@@ -110,7 +110,7 @@ class BlackWidow {
   // key. This command overwrites any specified fields already existing in the
   // hash. If key does not exist, a new key holding a hash is created.
   Status HMSet(const Slice& key,
-               const std::vector<BlackWidow::FieldValue>& fvs);
+               const std::vector<BlackWidow::SliceFieldValue>& fvs);
 
   // Returns the values associated with the specified fields in the hash stored
   // at key.

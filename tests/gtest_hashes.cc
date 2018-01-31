@@ -69,12 +69,12 @@ TEST_F(HashesTest, HGetTest) {
 // HMSet
 TEST_F(HashesTest, HMSetTest) {
   int32_t ret = 0;
-  std::vector<blackwidow::BlackWidow::FieldValue> fvs1;
+  std::vector<blackwidow::BlackWidow::SliceFieldValue> fvs1;
   fvs1.push_back({"TEST_FIELD1", "TEST_VALUE1"});
   fvs1.push_back({"TEST_FIELD2", "TEST_VALUE2"});
 
   // If field already exists in the hash, it is overwritten
-  std::vector<blackwidow::BlackWidow::FieldValue> fvs2;
+  std::vector<blackwidow::BlackWidow::SliceFieldValue> fvs2;
   fvs2.push_back({"TEST_FIELD2", "TEST_VALUE2"});
   fvs2.push_back({"TEST_FIELD3", "TEST_VALUE3"});
   fvs2.push_back({"TEST_FIELD4", "TEST_VALUE4"});
@@ -107,7 +107,7 @@ TEST_F(HashesTest, HMSetTest) {
 
   // The key has timeout
   std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-  std::vector<blackwidow::BlackWidow::FieldValue> fvs3;
+  std::vector<blackwidow::BlackWidow::SliceFieldValue> fvs3;
   fvs3.push_back({"TEST_FIELD3", "TEST_VALUE3"});
   fvs3.push_back({"TEST_FIELD4", "TEST_VALUE4"});
   fvs3.push_back({"TEST_FIELD5", "TEST_VALUE5"});
@@ -133,7 +133,7 @@ TEST_F(HashesTest, HMSetTest) {
 // HMGet
 TEST_F(HashesTest, HMGetTest) {
   int32_t ret = 0;
-  std::vector<blackwidow::BlackWidow::FieldValue> fvs;
+  std::vector<blackwidow::BlackWidow::SliceFieldValue> fvs;
   fvs.push_back({"TEST_FIELD1", "TEST_VALUE1"});
   fvs.push_back({"TEST_FIELD2", "TEST_VALUE2"});
   fvs.push_back({"TEST_FIELD3", "TEST_VALUE3"});
@@ -183,7 +183,7 @@ TEST_F(HashesTest, HSetnxTest) {
 // HLen
 TEST_F(HashesTest, HLenTest) {
   int32_t ret = 0;
-  std::vector<blackwidow::BlackWidow::FieldValue> fvs;
+  std::vector<blackwidow::BlackWidow::SliceFieldValue> fvs;
   fvs.push_back({"TEST_FIELD1", "TEST_VALUE1"});
   fvs.push_back({"TEST_FIELD2", "TEST_VALUE2"});
   fvs.push_back({"TEST_FIELD3", "TEST_VALUE3"});
