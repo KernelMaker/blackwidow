@@ -8,6 +8,7 @@
 
 #include <string>
 #include <memory>
+#include <vector>
 
 #include "rocksdb/db.h"
 #include "rocksdb/status.h"
@@ -44,9 +45,10 @@ class Redis {
   virtual Status Del(const Slice& key) = 0;
   virtual bool Scan(const std::string& start_key,
                     const std::string& pattern,
-                    std::vector<std::string>& keys,
+                    std::vector<std::string>* keys,
                     int64_t* count,
                     std::string* next_key) = 0;
+
  protected:
   LockMgr* lock_mgr_;
   rocksdb::DB* db_;

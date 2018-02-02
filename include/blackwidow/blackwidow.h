@@ -7,6 +7,8 @@
 #define INCLUDE_BLACKWIDOW_BLACKWIDOW_H_
 
 #include <string>
+#include <map>
+#include <vector>
 #include <unordered_map>
 
 #include "rocksdb/status.h"
@@ -31,7 +33,7 @@ class BlackWidow {
   Status Open(const Options& options, const std::string& db_path);
 
   Status GetStartKey(int64_t cursor, std::string* start_key);
-  
+
   int64_t StoreAndGetCursor(int64_t cursor, const std::string& next_key);
 
   // Strings Commands
@@ -132,7 +134,8 @@ class BlackWidow {
 
   // Returns if field is an existing field in the hash stored at key.
   // Return Status::Ok() if the hash contains field.
-  // Return Status::NotFound() if the hash does not contain field, or key does not exist.
+  // Return Status::NotFound() if the hash does not contain field,
+  // or key does not exist.
   Status HExists(const Slice& key, const Slice& field);
 
   // Increments the number stored at field in the hash stored at key by
@@ -154,17 +157,21 @@ class BlackWidow {
   // Set a timeout on key
   // return -1 operation exception errors happen in database
   // return >=0 success
-  int32_t Expire(const Slice& key, int32_t ttl, std::map<DataType, Status>* type_status);
+  int32_t Expire(const Slice& key, int32_t ttl,
+                 std::map<DataType, Status>* type_status);
 
   // Removes the specified keys
   // return -1 operation exception errors happen in database
   // return >=0 the number of keys that were removed
-  int64_t Del(const std::vector<Slice>& keys, std::map<DataType, Status>* type_status);
+  int64_t Del(const std::vector<Slice>& keys,
+              std::map<DataType, Status>* type_status);
 
   // Iterate over a collection of elements
   // return an updated cursor that the user need to use as the cursor argument
   // in the next call
-  int64_t Scan(int64_t cursor, const std::string& pattern, int64_t count, std::vector<std::string>& keys);
+  int64_t Scan(int64_t cursor, const std::string& pattern,
+               int64_t count, std::vector<std::string>* keys);
+
  private:
   RedisStrings* strings_db_;
   RedisHashes* hashes_db_;

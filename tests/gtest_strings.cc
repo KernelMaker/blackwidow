@@ -42,7 +42,7 @@ TEST_F(StringsTest, ScanTest) {
   ASSERT_TRUE(s.ok());
  
   std::vector<std::string> keys;
-  cursor_ret = db.Scan(0, "SCAN*", 3, keys);
+  cursor_ret = db.Scan(0, "SCAN*", 3, &keys);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(keys.size(), 3);
   ASSERT_STREQ(keys[0].c_str(), "SCAN_KEY1");
@@ -50,7 +50,7 @@ TEST_F(StringsTest, ScanTest) {
   ASSERT_STREQ(keys[2].c_str(), "SCAN_KEY3");
  
   keys.clear(); 
-  cursor_ret = db.Scan(cursor_ret, "SCAN*", 3, keys);
+  cursor_ret = db.Scan(cursor_ret, "SCAN*", 3, &keys);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(keys.size(), 2);
   ASSERT_STREQ(keys[0].c_str(), "SCAN_KEY4");

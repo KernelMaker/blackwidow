@@ -373,7 +373,7 @@ Status RedisStrings::Del(const Slice& key) {
 
 bool RedisStrings::Scan(const std::string& start_key,
                         const std::string& pattern,
-                        std::vector<std::string>& keys,
+                        std::vector<std::string>* keys,
                         int64_t* count,
                         std::string* next_key) {
   std::string key;
@@ -391,17 +391,18 @@ bool RedisStrings::Scan(const std::string& start_key,
   it->Seek(start_key);
   while (it->Valid() && (*count) > 0) {
     key = it->key().ToString();
-    if (stringmatchlen(pattern.data(), pattern.size(), key.data(), key.size(), 0)) {
-      keys.push_back(key);
+    if (stringmatchlen(pattern.data(), pattern.size(),
+                       key.data(), key.size(), 0)) {
+      keys->push_back(key);
     }
     (*count)--;
     it->Next();
   }
   if (it->Valid()) {
     is_finish = false;
-    *next_key = it->key().ToString(); 
+    *next_key = it->key().ToString();
   } else {
-    *next_key = ""; 
+    *next_key = "";
   }
   delete it;
   return is_finish;

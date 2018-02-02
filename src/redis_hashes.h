@@ -22,9 +22,10 @@ class RedisHashes : public Redis {
 
   // Hashes Commands
   Status HSet(const Slice& key, const Slice& field, const Slice& value,
-      int32_t* res);
+              int32_t* res);
   Status HGet(const Slice& key, const Slice& field, std::string* value);
-  Status HMSet(const Slice& key, const std::vector<BlackWidow::FieldValue>& fvs);
+  Status HMSet(const Slice& key,
+               const std::vector<BlackWidow::FieldValue>& fvs);
   Status HMGet(const Slice& key, const std::vector<Slice>& fields,
                std::vector<std::string>* values);
   Status HLen(const Slice& key, int32_t* ret);
@@ -42,8 +43,9 @@ class RedisHashes : public Redis {
   virtual Status Expire(const Slice& key, int32_t ttl) override;
   virtual Status Del(const Slice& key) override;
   bool Scan(const std::string& start_key, const std::string& pattern,
-            std::vector<std::string>& keys,
+            std::vector<std::string>* keys,
             int64_t* count, std::string* next_key);
+
  private:
   std::vector<rocksdb::ColumnFamilyHandle*> handles_;
 };

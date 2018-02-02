@@ -45,7 +45,7 @@ class RedisStrings : public Redis {
   virtual Status Expire(const Slice& key, int32_t ttl) override;
   virtual Status Del(const Slice& key) override;
   bool Scan(const std::string& start_key, const std::string& pattern,
-            std::vector<std::string>& keys,
+            std::vector<std::string>* keys,
             int64_t* count, std::string* next_key);
 };
 
