@@ -371,7 +371,7 @@ bool RedisHashes::Scan(const std::string& start_key,
                        std::vector<std::string>* keys,
                        int64_t* count,
                        std::string* next_key) {
-  std::string key;
+  std::string meta_key, meta_value;
   bool is_finish = true;
   rocksdb::ReadOptions iterator_options;
   const rocksdb::Snapshot* snapshot;
@@ -383,14 +383,22 @@ bool RedisHashes::Scan(const std::string& start_key,
 
   it->Seek(start_key);
   while (it->Valid() && (*count) > 0) {
-    key = it->key().ToString();
-    if (stringmatchlen(pattern.data(), pattern.size(),
-                       key.data(), key.size(), 0)) {
-      keys->push_back(key);
+    meta_key = it->key().ToString();
+    meta_value = it->value().ToString();
+    ParsedHashesMetaValue parsed_meta_value(&meta_value);
+    if (parsed_meta_value.IsStale()) {
+      it->Next();
+      continue;
+    } else {
+      if (stringmatchlen(pattern.data(), pattern.size(),
+                         meta_key.data(), meta_key.size(), 0)) {
+        keys->push_back(meta_key);
+      }
+      (*count)--;
+      it->Next();
     }
-    (*count)--;
-    it->Next();
   }
+
   if (it->Valid()) {
     *next_key = it->key().ToString();
     is_finish = false;

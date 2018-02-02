@@ -40,7 +40,7 @@ TEST_F(StringsTest, ScanTest) {
   kvs.push_back({"SCAN_KEY5", "SCAN_VALUE5"});
   s = db.MSet(kvs);
   ASSERT_TRUE(s.ok());
- 
+
   std::vector<std::string> keys;
   cursor_ret = db.Scan(0, "SCAN*", 3, &keys);
   ASSERT_TRUE(s.ok());
@@ -48,14 +48,27 @@ TEST_F(StringsTest, ScanTest) {
   ASSERT_STREQ(keys[0].c_str(), "SCAN_KEY1");
   ASSERT_STREQ(keys[1].c_str(), "SCAN_KEY2");
   ASSERT_STREQ(keys[2].c_str(), "SCAN_KEY3");
- 
-  keys.clear(); 
+
+  keys.clear();
   cursor_ret = db.Scan(cursor_ret, "SCAN*", 3, &keys);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(keys.size(), 2);
   ASSERT_STREQ(keys[0].c_str(), "SCAN_KEY4");
   ASSERT_STREQ(keys[1].c_str(), "SCAN_KEY5");
   ASSERT_EQ(cursor_ret, 0);
+
+  // If the key already expired
+  std::map<BlackWidow::DataType, Status> type_status;
+  int32_t ret = db.Expire("SCAN_KEY1", 1, &type_status);
+  ASSERT_GE(ret, 0);
+  std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+  keys.clear();
+  cursor_ret = db.Scan(0, "SCAN*", 3, &keys);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(keys.size(), 3);
+  ASSERT_STREQ(keys[0].c_str(), "SCAN_KEY2");
+  ASSERT_STREQ(keys[1].c_str(), "SCAN_KEY3");
+  ASSERT_STREQ(keys[2].c_str(), "SCAN_KEY4");
 }
 
 // Set
@@ -261,7 +274,7 @@ TEST_F(StringsTest, ExpireTest) {
       ASSERT_TRUE(it->second.IsNotFound());
     }
   }
-  std::this_thread::sleep_for(std::chrono::milliseconds(2500));
+  std::this_thread::sleep_for(std::chrono::milliseconds(2000));
   s = db.Get("EXPIRE_KEY", &value);
   ASSERT_TRUE(s.IsNotFound());
 }
