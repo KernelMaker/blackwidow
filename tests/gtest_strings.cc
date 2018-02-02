@@ -27,6 +27,37 @@ class StringsTest : public ::testing::Test {
   blackwidow::Status s;
 };
 
+// Scan
+// Note: This test needs to execute at first because all of the data is
+// predetermined.
+TEST_F(StringsTest, ScanTest) {
+  std::vector<BlackWidow::KeyValue> kvs;
+  int64_t cursor_ret;
+  kvs.push_back({"SCAN_KEY1", "SCAN_VALUE1"});
+  kvs.push_back({"SCAN_KEY2", "SCAN_VALUE2"});
+  kvs.push_back({"SCAN_KEY3", "SCAN_VALUE3"});
+  kvs.push_back({"SCAN_KEY4", "SCAN_VALUE4"});
+  kvs.push_back({"SCAN_KEY5", "SCAN_VALUE5"});
+  s = db.MSet(kvs);
+  ASSERT_TRUE(s.ok());
+ 
+  std::vector<std::string> keys;
+  cursor_ret = db.Scan(0, "SCAN*", 3, keys);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(keys.size(), 3);
+  ASSERT_STREQ(keys[0].c_str(), "SCAN_KEY1");
+  ASSERT_STREQ(keys[1].c_str(), "SCAN_KEY2");
+  ASSERT_STREQ(keys[2].c_str(), "SCAN_KEY3");
+ 
+  keys.clear(); 
+  cursor_ret = db.Scan(cursor_ret, "SCAN*", 3, keys);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(keys.size(), 2);
+  ASSERT_STREQ(keys[0].c_str(), "SCAN_KEY4");
+  ASSERT_STREQ(keys[1].c_str(), "SCAN_KEY5");
+  ASSERT_EQ(cursor_ret, 0);
+}
+
 // Set
 TEST_F(StringsTest, SetTest) {
   s = db.Set("TEST_KEY", "TEST_VALUE");

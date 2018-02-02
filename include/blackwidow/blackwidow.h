@@ -7,6 +7,7 @@
 #define INCLUDE_BLACKWIDOW_BLACKWIDOW_H_
 
 #include <string>
+#include <unordered_map>
 
 #include "rocksdb/status.h"
 #include "rocksdb/options.h"
@@ -28,6 +29,10 @@ class BlackWidow {
   Status Compact();
 
   Status Open(const Options& options, const std::string& db_path);
+
+  Status GetStartKey(int64_t cursor, std::string* start_key);
+  
+  int64_t StoreAndGetCursor(int64_t cursor, const std::string& next_key);
 
   // Strings Commands
   struct KeyValue {
@@ -149,16 +154,23 @@ class BlackWidow {
   // Set a timeout on key
   // return -1 operation exception errors happen in database
   // return >=0 success
-  int Expire(const Slice& key, int32_t ttl, std::map<DataType, Status>* type_status);
+  int32_t Expire(const Slice& key, int32_t ttl, std::map<DataType, Status>* type_status);
 
   // Removes the specified keys
   // return -1 operation exception errors happen in database
   // return >=0 the number of keys that were removed
-  int Del(const std::vector<Slice>& keys, std::map<DataType, Status>* type_status);
+  int64_t Del(const std::vector<Slice>& keys, std::map<DataType, Status>* type_status);
 
+  // Iterate over a collection of elements
+  // return an updated cursor that the user need to use as the cursor argument
+  // in the next call
+  int64_t Scan(int64_t cursor, const std::string& pattern, int64_t count, std::vector<std::string>& keys);
  private:
   RedisStrings* strings_db_;
   RedisHashes* hashes_db_;
+
+  std::unordered_map<int64_t, std::string> cursors_map_;
+  int32_t cursors_max_size_;
 };
 
 }  //  namespace blackwidow
