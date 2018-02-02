@@ -9,7 +9,9 @@
 #include <string>
 #include <map>
 #include <vector>
-#include <unordered_map>
+#include <list>
+
+#include "src/mutex_impl.h"
 
 #include "rocksdb/status.h"
 #include "rocksdb/options.h"
@@ -35,6 +37,14 @@ class BlackWidow {
   Status GetStartKey(int64_t cursor, std::string* start_key);
 
   int64_t StoreAndGetCursor(int64_t cursor, const std::string& next_key);
+
+  // Common
+  template <typename T1, typename T2>
+  struct LRU{
+    int64_t max_size_;
+    std::list<T1> list_;
+    std::map<T1, T2> map_;
+  };
 
   // Strings Commands
   struct KeyValue {
@@ -176,8 +186,10 @@ class BlackWidow {
   RedisStrings* strings_db_;
   RedisHashes* hashes_db_;
 
-  std::unordered_map<int64_t, std::string> cursors_map_;
-  int32_t cursors_max_size_;
+  MutexFactoryImpl mutex_factory_;
+
+  LRU<int64_t, std::string> cursors_store_;
+  std::shared_ptr<Mutex> cursors_mutex_;
 };
 
 }  //  namespace blackwidow

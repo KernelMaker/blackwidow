@@ -390,7 +390,7 @@ bool RedisHashes::Scan(const std::string& start_key,
       it->Next();
       continue;
     } else {
-      if (stringmatchlen(pattern.data(), pattern.size(),
+      if (StringMatch(pattern.data(), pattern.size(),
                          meta_key.data(), meta_key.size(), 0)) {
         keys->push_back(meta_key);
       }

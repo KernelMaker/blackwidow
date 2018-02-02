@@ -5,6 +5,7 @@
 
 #include "blackwidow/blackwidow.h"
 
+#include "src/mutex_impl.h"
 #include "src/redis_strings.h"
 #include "src/redis_hashes.h"
 
@@ -12,8 +13,9 @@ namespace blackwidow {
 
 BlackWidow::BlackWidow() :
   strings_db_(nullptr),
-  hashes_db_(nullptr),
-  cursors_max_size_(5000) {
+  hashes_db_(nullptr) {
+  cursors_store_.max_size_ = 5000;
+  cursors_mutex_ = mutex_factory_.AllocateMutex();
 }
 
 BlackWidow::~BlackWidow() {
@@ -48,27 +50,40 @@ Status BlackWidow::Open(const rocksdb::Options& options,
 }
 
 Status BlackWidow::GetStartKey(int64_t cursor, std::string* start_key) {
-  if (cursors_map_.end() == cursors_map_.find(cursor)) {
+  cursors_mutex_->Lock();
+  if (cursors_store_.map_.end() == cursors_store_.map_.find(cursor)) {
+    cursors_mutex_->UnLock();
     return Status::NotFound();
   } else {
-    *start_key = cursors_map_[cursor];
+    // If the cursor is present in the list,
+    // move the cursor to the start of list
+    cursors_store_.list_.remove(cursor);
+    cursors_store_.list_.push_front(cursor);
+    *start_key = cursors_store_.map_[cursor];
+    cursors_mutex_->UnLock();
     return Status::OK();
   }
 }
 
 int64_t BlackWidow::StoreAndGetCursor(int64_t cursor,
                                       const std::string& next_key) {
-  if (cursors_map_.size() > static_cast<size_t>(cursors_max_size_)) {
-    cursors_map_.erase(cursors_map_.begin());
+  cursors_mutex_->Lock();
+  if (cursors_store_.map_.size() >
+      static_cast<size_t>(cursors_store_.max_size_)) {
+    int64_t tail = cursors_store_.list_.back();
+    cursors_store_.list_.remove(tail);
+    cursors_store_.map_.erase(tail);
   }
-  for (auto it = cursors_map_.begin(); it != cursors_map_.end(); it++) {
-    if (cursor < it->first) {
+  for (auto it : cursors_store_.map_) {
+    if (cursor < it.first) {
       break;
-    } else if (cursor == it->first) {
+    } else if (cursor == it.first) {
       cursor++;
     }
   }
-  cursors_map_[cursor] = next_key;
+  cursors_store_.list_.push_back(cursor);
+  cursors_store_.map_[cursor] = next_key;
+  cursors_mutex_->UnLock();
   return cursor;
 }
 

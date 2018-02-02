@@ -397,7 +397,7 @@ bool RedisStrings::Scan(const std::string& start_key,
       it->Next();
       continue;
     } else {
-      if (stringmatchlen(pattern.data(), pattern.size(),
+      if (StringMatch(pattern.data(), pattern.size(),
                          key.data(), key.size(), 0)) {
         keys->push_back(key);
       }
