@@ -197,31 +197,34 @@ int BlackWidow::Del(const std::vector<Slice>& keys,
   }
 }
 
-int BlackWidow::Exists(const std::vector<Slice>& keysm,
+int64_t BlackWidow::Exists(const std::vector<Slice>& keys,
                        std::map<DataType, Status>* type_status) {
-  int count = 0;
+  int64_t count = 0;
+  int32_t len;
+  std::string value;
+  Status s;
   bool is_corruption = false;
 
   for (const auto& key : keys) {
-    Status s = strings_db_->Get(keys);
+    s = strings_db_->Get(key, &value);
     if (s.ok()) {
-      count++; 
+      count++;
     } else if (!s.IsNotFound()) {
-      is_corruption = true; 
+      is_corruption = true;
       (*type_status)[DataType::STRINGS] = s;
     }
 
-    Status s = hashes_db_->HLen(key);
+    s = hashes_db_->HLen(key, &len);
     if (s.ok()) {
-      count++; 
+      count++;
     } else if (!s.IsNotFound()) {
-      is_corruption = true; 
+      is_corruption = true;
       (*type_status)[DataType::HASHES] = s;
     }
   }
 
   if (is_corruption) {
-    return -1; 
+    return -1;
   } else {
     return count;
   }

@@ -157,8 +157,10 @@ class BlackWidow {
   int Del(const std::vector<Slice>& keys, std::map<DataType, Status>* type_status);
 
   // Returns if key exists.
-  // return the number of keys existing
-  int Exists(const std::vector<Slice>& keys);
+  // return -1 operation exception errors happen in database
+  // return >=0 the number of keys existing
+  int64_t Exists(const std::vector<Slice>& keys,
+             std::map<DataType, Status>* type_status);
 
  private:
   RedisStrings* strings_db_;
