@@ -46,7 +46,7 @@ class RedisStrings : public Redis {
   virtual Status Del(const Slice& key) override;
   bool Scan(const std::string& start_key, const std::string& pattern,
             std::vector<std::string>* keys,
-            int64_t* count, std::string* next_key);
+            int64_t count, std::string* next_key);
 };
 
 }  //  namespace blackwidow

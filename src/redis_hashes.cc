@@ -369,7 +369,7 @@ Status RedisHashes::Del(const Slice& key) {
 bool RedisHashes::Scan(const std::string& start_key,
                        const std::string& pattern,
                        std::vector<std::string>* keys,
-                       int64_t* count,
+                       int64_t count,
                        std::string* next_key) {
   std::string meta_key, meta_value;
   bool is_finish = true;
@@ -382,19 +382,19 @@ bool RedisHashes::Scan(const std::string& start_key,
   rocksdb::Iterator* it = db_->NewIterator(iterator_options, handles_[0]);
 
   it->Seek(start_key);
-  while (it->Valid() && (*count) > 0) {
-    meta_key = it->key().ToString();
-    meta_value = it->value().ToString();
-    ParsedHashesMetaValue parsed_meta_value(&meta_value);
+  while (it->Valid() && count > 0) {
+    ParsedHashesMetaValue parsed_meta_value(it->value());
     if (parsed_meta_value.IsStale()) {
       it->Next();
       continue;
     } else {
+      meta_key = it->key().ToString();
+      meta_value = it->value().ToString();
       if (StringMatch(pattern.data(), pattern.size(),
                          meta_key.data(), meta_key.size(), 0)) {
         keys->push_back(meta_key);
       }
-      (*count)--;
+      count--;
       it->Next();
     }
   }

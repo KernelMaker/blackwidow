@@ -15,7 +15,7 @@ class StringsTest : public ::testing::Test {
  public:
   StringsTest() {
     options.create_if_missing = true;
-    s = db.Open(options, "./db");
+    s = db.Open(options, "./db/strings");
   }
   virtual ~StringsTest() { }
 

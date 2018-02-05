@@ -15,7 +15,7 @@ class KeysTest : public ::testing::Test {
  public:
   KeysTest() {
     options.create_if_missing = true;
-    s = db.Open(options, "./db");
+    s = db.Open(options, "./db/keys");
   }
   virtual ~KeysTest() { }
 

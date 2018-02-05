@@ -13,7 +13,7 @@ class HashesTest : public ::testing::Test {
  public:
   HashesTest() {
     options.create_if_missing = true;
-    s = db.Open(options, "./db");
+    s = db.Open(options, "./db/hashes");
   }
   virtual ~HashesTest() { }
 

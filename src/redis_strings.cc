@@ -374,7 +374,7 @@ Status RedisStrings::Del(const Slice& key) {
 bool RedisStrings::Scan(const std::string& start_key,
                         const std::string& pattern,
                         std::vector<std::string>* keys,
-                        int64_t* count,
+                        int64_t count,
                         std::string* next_key) {
   std::string key, value;
   bool is_finish = true;
@@ -389,19 +389,19 @@ bool RedisStrings::Scan(const std::string& start_key,
   rocksdb::Iterator* it = db_->NewIterator(iterator_options);
 
   it->Seek(start_key);
-  while (it->Valid() && (*count) > 0) {
-    key = it->key().ToString();
-    value = it->value().ToString();
-    ParsedStringsValue parsed_strings_value(value);
+  while (it->Valid() && count > 0) {
+    ParsedStringsValue parsed_strings_value(it->value());
     if (parsed_strings_value.IsStale()) {
       it->Next();
       continue;
     } else {
+      key = it->key().ToString();
+      value = it->value().ToString();
       if (StringMatch(pattern.data(), pattern.size(),
                          key.data(), key.size(), 0)) {
         keys->push_back(key);
       }
-      (*count)--;
+      count--;
       it->Next();
     }
   }

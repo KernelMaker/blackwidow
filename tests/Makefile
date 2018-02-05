@@ -64,15 +64,13 @@ dbg: $(OBJECTS)
 test: $(OBJECTS)
 	@rm -rf db
 	@rm -rf hash_meta_db
-	@mkdir db
-	@mkdir hash_meta_db
+	@mkdir -p db/keys db/strings db/hashes
 	@./gtest_keys
 	@./gtest_strings
 	@./gtest_hashes
 	@./gtest_strings_filter
 	@./gtest_hashes_filter
 	@rm -rf db
-	@rm -rf hash_meta_db
 
 GOOGLETEST:
 	@cd $(GOOGLETEST_PATH); if [ ! -f ./Makefile ]; then  cmake .; fi; make;
