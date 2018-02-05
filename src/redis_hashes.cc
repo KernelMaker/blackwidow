@@ -250,7 +250,7 @@ Status RedisHashes::HGetall(const Slice& key,
   if (s.ok()) {
     ParsedHashesMetaValue parsed_hashes_meta_value(&meta_value);
     if (parsed_hashes_meta_value.IsStale()) {
-      return Status::OK();
+      return Status::NotFound("Stale");
     } else {
       version = parsed_hashes_meta_value.version();
       HashesDataKey hashes_data_key(key, version, "");
@@ -264,12 +264,8 @@ Status RedisHashes::HGetall(const Slice& key,
                 iter->value().ToString()});
       }
     }
-  } else if (s.IsNotFound()) {
-    return Status::OK();
-  } else {
-    return s;
   }
-  return Status::OK();
+  return s;
 }
 
 Status RedisHashes::HSetnx(const Slice& key, const Slice& field, const Slice& value,

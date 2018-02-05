@@ -372,13 +372,13 @@ TEST_F(HashesTest, HGetall) {
   ASSERT_TRUE(type_status[BlackWidow::DataType::HASHES].ok());
   std::this_thread::sleep_for(std::chrono::milliseconds(2000));
   s = db.HGetall("HGETALL_KEY", &fvs_out);
-  ASSERT_TRUE(s.ok());
+  ASSERT_TRUE(s.IsNotFound());
   ASSERT_EQ(fvs_out.size(), 0);
 
   // Getall not exist hash table
   fvs_out.clear();
   s = db.HGetall("HGETALL_NOT_EXIST_KEY", &fvs_out);
-  ASSERT_TRUE(s.ok());
+  ASSERT_TRUE(s.IsNotFound());
   ASSERT_EQ(fvs_out.size(), 0);
 }
 
