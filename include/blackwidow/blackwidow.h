@@ -156,6 +156,10 @@ class BlackWidow {
   // return >=0 the number of keys that were removed
   int Del(const std::vector<Slice>& keys, std::map<DataType, Status>* type_status);
 
+  // Returns if key exists.
+  // return the number of keys existing
+  int Exists(const std::vector<Slice>& keys);
+
  private:
   RedisStrings* strings_db_;
   RedisHashes* hashes_db_;

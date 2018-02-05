@@ -173,8 +173,8 @@ int BlackWidow::Del(const std::vector<Slice>& keys,
       is_success = true;
     } else if (!s.IsNotFound()) {
       is_corruption = true;
+      (*type_status)[DataType::STRINGS] = s;
     }
-    (*type_status)[DataType::STRINGS] = s;
 
     // Hashes
     s = hashes_db_->Del(key);
@@ -182,8 +182,8 @@ int BlackWidow::Del(const std::vector<Slice>& keys,
       is_success = true;
     } else if (!s.IsNotFound()) {
       is_corruption = true;
+      (*type_status)[DataType::HASHES] = s;
     }
-    (*type_status)[DataType::HASHES] = s;
 
     if (is_success) {
       count++;
@@ -192,6 +192,36 @@ int BlackWidow::Del(const std::vector<Slice>& keys,
 
   if (is_corruption) {
     return -1;
+  } else {
+    return count;
+  }
+}
+
+int BlackWidow::Exists(const std::vector<Slice>& keysm,
+                       std::map<DataType, Status>* type_status) {
+  int count = 0;
+  bool is_corruption = false;
+
+  for (const auto& key : keys) {
+    Status s = strings_db_->Get(keys);
+    if (s.ok()) {
+      count++; 
+    } else if (!s.IsNotFound()) {
+      is_corruption = true; 
+      (*type_status)[DataType::STRINGS] = s;
+    }
+
+    Status s = hashes_db_->HLen(key);
+    if (s.ok()) {
+      count++; 
+    } else if (!s.IsNotFound()) {
+      is_corruption = true; 
+      (*type_status)[DataType::HASHES] = s;
+    }
+  }
+
+  if (is_corruption) {
+    return -1; 
   } else {
     return count;
   }
