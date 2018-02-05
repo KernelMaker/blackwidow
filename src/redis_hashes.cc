@@ -237,6 +237,41 @@ Status RedisHashes::HMGet(const Slice& key,
   return Status::OK();
 }
 
+Status RedisHashes::HGetall(const Slice& key,
+                            std::vector<BlackWidow::StringFieldValue>* fvs) {
+  rocksdb::ReadOptions read_options;
+  const rocksdb::Snapshot* snapshot;
+
+  std::string meta_value;
+  int32_t version = 0;
+  ScopeSnapshot ss(db_, &snapshot);
+  read_options.snapshot = snapshot;
+  Status s = db_->Get(read_options, handles_[0], key, &meta_value);
+  if (s.ok()) {
+    ParsedHashesMetaValue parsed_hashes_meta_value(&meta_value);
+    if (parsed_hashes_meta_value.IsStale()) {
+      return Status::OK();
+    } else {
+      version = parsed_hashes_meta_value.version();
+      HashesDataKey hashes_data_key(key, version, "");
+      Slice prefix = hashes_data_key.Encode();
+      auto iter = db_->NewIterator(read_options, handles_[1]);
+      for (iter->Seek(prefix);
+           iter->Valid() && iter->key().starts_with(prefix);
+           iter->Next()) {
+        ParsedHashesDataKey parsed_hashes_data_key(iter->key());
+        fvs->push_back({parsed_hashes_data_key.field().ToString(),
+                iter->value().ToString()});
+      }
+    }
+  } else if (s.IsNotFound()) {
+    return Status::OK();
+  } else {
+    return s;
+  }
+  return Status::OK();
+}
+
 Status RedisHashes::HSetnx(const Slice& key, const Slice& field, const Slice& value,
                            int32_t* ret) {
   rocksdb::WriteBatch batch;

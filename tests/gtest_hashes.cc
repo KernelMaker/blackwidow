@@ -15,10 +15,9 @@ class HashesTest : public ::testing::Test {
  public:
   HashesTest() {
     std::string path = "./db";
-    if (access(path.c_str(), F_OK) == 0) {
-      remove(path.c_str());
+    if (access(path.c_str(), F_OK)) {
+      mkdir(path.c_str(), 0755);
     }
-    mkdir(path.c_str(), 0755);
     options.create_if_missing = true;
     s = db.Open(options, path);
   }
@@ -343,6 +342,44 @@ TEST_F(HashesTest, HDel) {
   s = db.HDel("HDEL_TIMEOUT_KEY", fields, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(ret, 0);
+}
+
+// HGetall
+TEST_F(HashesTest, HGetall) {
+  int32_t ret = 0;
+  std::vector<BlackWidow::SliceFieldValue> fvs_in;
+  fvs_in.push_back({"TEST_FIELD1", "TEST_VALUE1"});
+  fvs_in.push_back({"TEST_FIELD2", "TEST_VALUE2"});
+  fvs_in.push_back({"TEST_FIELD3", "TEST_VALUE3"});
+  s = db.HMSet("HGETALL_KEY", fvs_in);
+  ASSERT_TRUE(s.ok());
+
+  std::vector<BlackWidow::StringFieldValue> fvs_out;
+  s = db.HGetall("HGETALL_KEY", &fvs_out);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(fvs_out.size(), 3);
+  ASSERT_EQ(fvs_out[0].field, "TEST_FIELD1");
+  ASSERT_EQ(fvs_out[0].value, "TEST_VALUE1");
+  ASSERT_EQ(fvs_out[1].field, "TEST_FIELD2");
+  ASSERT_EQ(fvs_out[1].value, "TEST_VALUE2");
+  ASSERT_EQ(fvs_out[2].field, "TEST_FIELD3");
+  ASSERT_EQ(fvs_out[2].value, "TEST_VALUE3");
+
+  // Getall timeout hash table
+  fvs_out.clear();
+  std::map<BlackWidow::DataType, rocksdb::Status> type_status;
+  db.Expire("HGETALL_KEY", 1, &type_status);
+  ASSERT_TRUE(type_status[BlackWidow::DataType::HASHES].ok());
+  std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+  s = db.HGetall("HGETALL_KEY", &fvs_out);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(fvs_out.size(), 0);
+
+  // Getall not exist hash table
+  fvs_out.clear();
+  s = db.HGetall("HGETALL_NOT_EXIST_KEY", &fvs_out);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(fvs_out.size(), 0);
 }
 
 

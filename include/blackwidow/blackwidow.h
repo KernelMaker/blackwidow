@@ -94,6 +94,10 @@ class BlackWidow {
     Slice field;
     Slice value;
   };
+  struct StringFieldValue {
+    std::string field;
+    std::string value;
+  };
 
   // Sets field in the hash stored at key to value. If key does not exist, a new
   // key holding a hash is created. If field already exists in the hash, it is
@@ -120,6 +124,12 @@ class BlackWidow {
   Status HMGet(const Slice& key,
                const std::vector<Slice>& fields,
                std::vector<std::string>* values);
+
+  // Returns all fields and values of the hash stored at key. In the returned
+  // value, every field name is followed by its value, so the length of the
+  // reply is twice the size of the hash.
+  Status HGetall(const Slice& key,
+                 std::vector<BlackWidow::StringFieldValue>* fvs);
 
   // Sets field in the hash stored at key to value, only if field does not yet
   // exist. If key does not exist, a new key holding a hash is created. If field

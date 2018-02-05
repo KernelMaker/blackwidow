@@ -27,6 +27,8 @@ class RedisHashes : public Redis {
   Status HMSet(const Slice& key, const std::vector<BlackWidow::SliceFieldValue>& fvs);
   Status HMGet(const Slice& key, const std::vector<Slice>& fields,
                std::vector<std::string>* values);
+  Status HGetall(const Slice& key,
+                 std::vector<BlackWidow::StringFieldValue>* fvs);
   Status HSetnx(const Slice& key, const Slice& field, const Slice& value,
                 int32_t* ret);
   Status HLen(const Slice& key, int32_t* ret);
