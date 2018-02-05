@@ -9,6 +9,8 @@
 
 #include "blackwidow/blackwidow.h"
 
+using namespace blackwidow;
+
 class HashesTest : public ::testing::Test {
  public:
   HashesTest() {
@@ -297,6 +299,47 @@ TEST_F(HashesTest, HIncrby) {
           -9223372036854775807, &value);
   ASSERT_TRUE(s.IsInvalidArgument());
 }
+
+// HDel
+TEST_F(HashesTest, HDel) {
+  int32_t ret = 0;
+  std::vector<blackwidow::BlackWidow::SliceFieldValue> fvs;
+  fvs.push_back({"TEST_FIELD1", "TEST_VALUE1"});
+  fvs.push_back({"TEST_FIELD2", "TEST_VALUE2"});
+  fvs.push_back({"TEST_FIELD3", "TEST_VALUE3"});
+  fvs.push_back({"TEST_FIELD4", "TEST_VALUE4"});
+
+  s = db.HMSet("HDEL_KEY", fvs);
+  ASSERT_TRUE(s.ok());
+
+  std::vector<rocksdb::Slice> fields {"TEST_FIELD1", "TEST_FIELD2",
+    "TEST_FIELD3", "TEST_FIElD2", "TEST_NOT_EXIST_FIELD"};
+  s = db.HDel("HDEL_KEY", fields, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 3);
+
+  s = db.HLen("HDEL_KEY", &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 1);
+
+  // Delete not exist hash table
+  s = db.HDel("HDEL_NOT_EXIST_KEY", fields, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 0);
+
+  // Delete timeout hash table
+  s = db.HMSet("HDEL_TIMEOUT_KEY", fvs);
+  ASSERT_TRUE(s.ok());
+
+  std::map<BlackWidow::DataType, rocksdb::Status> type_status;
+  db.Expire("HDEL_TIMEOUT_KEY", 1, &type_status);
+  ASSERT_TRUE(type_status[BlackWidow::DataType::HASHES].ok());
+  std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+  s = db.HDel("HDEL_TIMEOUT_KEY", fields, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 0);
+}
+
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);

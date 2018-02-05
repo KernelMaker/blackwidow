@@ -138,6 +138,11 @@ Status BlackWidow::HIncrby(const Slice& key, const Slice& field, int64_t value,
   return hashes_db_->HIncrby(key, field, value, ret);
 }
 
+Status BlackWidow::HDel(const Slice& key, const std::vector<Slice>& fields,
+                        int32_t* ret) {
+  return hashes_db_->HDel(key, fields, ret);
+}
+
 // Keys Commands
 int BlackWidow::Expire(const Slice& key,
                        int32_t ttl, std::map<DataType, Status>* type_status) {

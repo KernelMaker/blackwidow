@@ -147,6 +147,12 @@ class BlackWidow {
   Status HIncrby(const Slice& key, const Slice& field, int64_t value,
                  int64_t* ret);
 
+  // Removes the specified fields from the hash stored at key. Specified fields
+  // that do not exist within this hash are ignored. If key does not exist, it
+  // is treated as an empty hash and this command returns 0.
+  Status HDel(const Slice& key, const std::vector<Slice>& fields,
+              int32_t* ret);
+
   // Keys Commands
   enum DataType{
     STRINGS,
