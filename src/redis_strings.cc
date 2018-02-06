@@ -374,7 +374,7 @@ Status RedisStrings::Del(const Slice& key) {
 bool RedisStrings::Scan(const std::string& start_key,
                         const std::string& pattern,
                         std::vector<std::string>* keys,
-                        int64_t count,
+                        int64_t* count,
                         std::string* next_key) {
   std::string key, value;
   bool is_finish = true;
@@ -385,11 +385,11 @@ bool RedisStrings::Scan(const std::string& start_key,
   iterator_options.fill_cache = false;
 
   // Note: This is a string type and does not need to pass the column family as
-  // a parameter
+  // a parameter, use the default column family
   rocksdb::Iterator* it = db_->NewIterator(iterator_options);
 
   it->Seek(start_key);
-  while (it->Valid() && count > 0) {
+  while (it->Valid() && (*count) > 0) {
     ParsedStringsValue parsed_strings_value(it->value());
     if (parsed_strings_value.IsStale()) {
       it->Next();
@@ -401,7 +401,7 @@ bool RedisStrings::Scan(const std::string& start_key,
                          key.data(), key.size(), 0)) {
         keys->push_back(key);
       }
-      count--;
+      (*count)--;
       it->Next();
     }
   }

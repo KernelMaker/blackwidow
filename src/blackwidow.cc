@@ -241,7 +241,7 @@ int64_t BlackWidow::Del(const std::vector<Slice>& keys,
 int64_t BlackWidow::Scan(int64_t cursor, const std::string& pattern,
                          int64_t count, std::vector<std::string>* keys) {
   bool is_finish;
-  int64_t rest = 0, cursor_ret = 0;
+  int64_t count_origin = count, cursor_ret = 0;
   std::string start_key = "";
   std::string next_key;
 
@@ -259,31 +259,30 @@ int64_t BlackWidow::Scan(int64_t cursor, const std::string& pattern,
   start_key.erase(start_key.begin());
   switch (key_type) {
     case 'k':
-      rest = count - keys->size();
       is_finish = strings_db_->Scan(start_key, pattern, keys,
-                                    rest, &next_key);
-      if ((count == static_cast<int64_t>(keys->size())) && is_finish) {
-        cursor_ret = StoreAndGetCursor(cursor + count, std::string("h"));
+                                    &count, &next_key);
+      if (count == 0 && is_finish) {
+        cursor_ret = StoreAndGetCursor(cursor + count_origin, std::string("h"));
         break;
-      } else if ((count == static_cast<int64_t>(keys->size())) && !is_finish) {
-        cursor_ret = StoreAndGetCursor(cursor + count,
+      } else if (count == 0 && !is_finish) {
+        cursor_ret = StoreAndGetCursor(cursor + count_origin,
                                        std::string("k") + next_key);
         break;
       }
       start_key = "";
     case 'h':
-      rest = count - keys->size();
       is_finish = hashes_db_->Scan(start_key, pattern, keys,
-                                   rest, &next_key);
-      if ((count == static_cast<int64_t>(keys->size())) && is_finish) {
-        cursor_ret = StoreAndGetCursor(cursor + count, std::string("l"));
+                                   &count, &next_key);
+      if (count == 0 && is_finish) {
+        cursor_ret = StoreAndGetCursor(cursor + count_origin, std::string("l"));
         break;
-      } else if ((count == static_cast<int64_t>(keys->size())) && !is_finish) {
-        cursor_ret = StoreAndGetCursor(cursor + count,
+      } else if (count == 0 && is_finish) {
+        cursor_ret = StoreAndGetCursor(cursor + count_origin,
                                        std::string("h") + next_key);
         break;
       }
   }
+
   return cursor_ret;
 }
 
