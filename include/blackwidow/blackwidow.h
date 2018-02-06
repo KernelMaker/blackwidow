@@ -48,10 +48,10 @@ class BlackWidow {
 
   // Strings Commands
   struct KeyValue {
-    Slice key;
-    Slice value;
+    std::string key;
+    std::string value;
     bool operator < (const KeyValue& kv) const {
-      return key.compare(kv.key) < 0;
+      return key < kv.key;
     }
   };
 
@@ -108,8 +108,8 @@ class BlackWidow {
 
   // Hashes Commands
   struct FieldValue {
-    Slice field;
-    Slice value;
+    std::string field;
+    std::string value;
   };
 
   // Sets field in the hash stored at key to value. If key does not exist, a new
@@ -135,12 +135,28 @@ class BlackWidow {
   // Because a non-existing keys are treated as empty hashes, running HMGET
   // against a non-existing key will return a list of nil values.
   Status HMGet(const Slice& key,
-               const std::vector<Slice>& fields,
+               const std::vector<std::string>& fields,
                std::vector<std::string>* values);
+
+  // Returns all fields and values of the hash stored at key. In the returned
+  // value, every field name is followed by its value, so the length of the
+  // reply is twice the size of the hash.
+  Status HGetall(const Slice& key,
+                 std::vector<BlackWidow::FieldValue>* fvs);
+
+  // Sets field in the hash stored at key to value, only if field does not yet
+  // exist. If key does not exist, a new key holding a hash is created. If field
+  // already exists, this operation has no effect.
+  Status HSetnx(const Slice& key, const Slice& field, const Slice& value,
+                int32_t* ret);
 
   // Returns the number of fields contained in the hash stored at key.
   // Return 0 when key does not exist.
   Status HLen(const Slice& key, int32_t* ret);
+
+  // Returns the string length of the value associated with field in the hash
+  // stored at key. If the key or the field do not exist, 0 is returned.
+  Status HStrlen(const Slice& key, const Slice& field, int32_t* len);
 
   // Returns if field is an existing field in the hash stored at key.
   // Return Status::Ok() if the hash contains field.
@@ -154,6 +170,12 @@ class BlackWidow {
   // performed.
   Status HIncrby(const Slice& key, const Slice& field, int64_t value,
                  int64_t* ret);
+
+  // Removes the specified fields from the hash stored at key. Specified fields
+  // that do not exist within this hash are ignored. If key does not exist, it
+  // is treated as an empty hash and this command returns 0.
+  Status HDel(const Slice& key, const std::vector<std::string>& fields,
+              int32_t* ret);
 
   // Keys Commands
   enum DataType{
