@@ -16,8 +16,9 @@
 #define HASH_TABLE_FIELD_SIZE 10000000
 
 using namespace blackwidow;
+using namespace std::chrono;
 
-static const std::string key(KEYLENGTH, 'a'); 
+static const std::string key(KEYLENGTH, 'a');
 static const std::string value(VALUELENGTH, 'a');
 
 void BenchSet() {
@@ -47,14 +48,15 @@ void BenchSet() {
   for (auto& job : jobs) {
     job.join();
   }
-  auto end = std::chrono::system_clock::now();
-  std::chrono::duration<double> elapsed_seconds = end-start;
-  auto cost = std::chrono::duration_cast<std::chrono::seconds>(elapsed_seconds).count();
-  std::cout << "Test case 1, Set " << THREADNUM * kv_num << " Cost: "<< cost << "s QPS: " << (THREADNUM * kv_num) / cost << std::endl;
+  auto end = system_clock::now();
+  duration<double> elapsed_seconds = end-start;
+  auto cost = duration_cast<std::chrono::seconds>(elapsed_seconds).count();
+  std::cout << "Test case 1, Set " << THREADNUM * kv_num << " Cost: "
+    << cost << "s QPS: " << (THREADNUM * kv_num) / cost << std::endl;
 
   kv_num = 100000;
   jobs.clear();
-  start = std::chrono::system_clock::now();
+  start = system_clock::now();
   for (size_t i = 0; i < THREADNUM; ++i) {
     jobs.emplace_back([&db](size_t kv_num) {
       for (size_t j = 0; j < kv_num; ++j) {
@@ -66,10 +68,11 @@ void BenchSet() {
   for (auto& job : jobs) {
     job.join();
   }
-  end = std::chrono::system_clock::now();
-  elapsed_seconds = end-start;
-  cost = std::chrono::duration_cast<std::chrono::seconds>(elapsed_seconds).count();
-  std::cout << "Test case 2, Set " << THREADNUM * kv_num << " Cost: "<< cost << "s QPS: " << (THREADNUM * kv_num) / cost << std::endl;
+  end = system_clock::now();
+  elapsed_seconds = end - start;
+  cost = duration_cast<seconds>(elapsed_seconds).count();
+  std::cout << "Test case 2, Set " << THREADNUM * kv_num << " Cost: "
+    << cost << "s QPS: " << (THREADNUM * kv_num) / cost << std::endl;
 }
 
 void BenchHGetall() {
@@ -101,16 +104,18 @@ void BenchHGetall() {
   db.HMSet("HGETALL_KEY1", fvs_in);
 
   fvs_out.clear();
-  auto start = std::chrono::system_clock::now();
+  auto start = system_clock::now();
   db.HGetall("HGETALL_KEY1", &fvs_out);
-  auto end = std::chrono::system_clock::now();
-  std::chrono::duration<double> elapsed_seconds = end - start;
-  auto cost = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed_seconds).count();
-  std::cout << "Test case 1, HGetall " << fvs_out.size() << " Field HashTable Cost: "<< cost << "ms" << std::endl;
+  auto end = system_clock::now();
+  duration<double> elapsed_seconds = end - start;
+  auto cost = duration_cast<milliseconds>(elapsed_seconds).count();
+  std::cout << "Test case 1, HGetall " << fvs_out.size()
+    << " Field HashTable Cost: "<< cost << "ms" << std::endl;
 
   // 1. Create the hash table then insert hash table 10000000 field
   // 2. Delete the hash table
-  // 3. Create the hash table whos key same as before, then insert the hash table 10000 field
+  // 3. Create the hash table whos key same as before,
+  //    then insert the hash table 10000 field
   // 4. HGetall the hash table 10000 field (statistics cost time)
   fvs_in.clear();
   for (size_t i = 0; i < HASH_TABLE_FIELD_SIZE; ++i) {
@@ -131,12 +136,13 @@ void BenchHGetall() {
   db.HMSet("HGETALL_KEY2", fvs_in);
 
   fvs_out.clear();
-  start = std::chrono::system_clock::now();
+  start = system_clock::now();
   db.HGetall("HGETALL_KEY2", &fvs_out);
-  end = std::chrono::system_clock::now();
+  end = system_clock::now();
   elapsed_seconds = end - start;
-  cost = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed_seconds).count();
-  std::cout << "Test case 2, HGetall " << fvs_out.size() << " Field HashTable Cost: "<< cost << "ms" << std::endl;
+  cost = duration_cast<milliseconds>(elapsed_seconds).count();
+  std::cout << "Test case 2, HGetall " << fvs_out.size()
+    << " Field HashTable Cost: "<< cost << "ms" << std::endl;
 
   // 1. Create the hash table then insert hash table 10000000 field
   // 2. Delete hash table 9990000 field, the hash table remain 10000 field
@@ -155,19 +161,18 @@ void BenchHGetall() {
   db.HDel("HGETALL_KEY3", fields, &ret);
 
   fvs_out.clear();
-  start = std::chrono::system_clock::now();
+  start = system_clock::now();
   db.HGetall("HGETALL_KEY3", &fvs_out);
-  end = std::chrono::system_clock::now();
+  end = system_clock::now();
   elapsed_seconds = end - start;
-  cost = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed_seconds).count();
-  std::cout << "Test case 3, HGetall " << fvs_out.size() << " Field HashTable Cost: "<< cost << "ms" << std::endl;
+  cost = duration_cast<milliseconds>(elapsed_seconds).count();
+  std::cout << "Test case 3, HGetall " << fvs_out.size()
+    << " Field HashTable Cost: "<< cost << "ms" << std::endl;
 }
 
 int main(int argc, char** argv) {
-
   // benchmark kv
   BenchSet();
-
   // benchmark hashes
   BenchHGetall();
 }
