@@ -136,11 +136,11 @@ Status RedisHashes::HGet(const Slice& key, const Slice& field,
 }
 
 Status RedisHashes::HMSet(const Slice& key,
-                          const std::vector<BlackWidow::SliceFieldValue>& fvs) {
+                          const std::vector<BlackWidow::FieldValue>& fvs) {
   std::unordered_set<std::string> fields;
-  std::vector<BlackWidow::SliceFieldValue> filtered_fvs;
+  std::vector<BlackWidow::FieldValue> filtered_fvs;
   for (auto iter = fvs.rbegin(); iter != fvs.rend(); ++iter) {
-    std::string field = iter->field.ToString();
+    std::string field = iter->field;
     if (fields.find(field) == fields.end()) {
       fields.insert(field);
       filtered_fvs.push_back(*iter);
@@ -202,7 +202,7 @@ Status RedisHashes::HMSet(const Slice& key,
 }
 
 Status RedisHashes::HMGet(const Slice& key,
-                          const std::vector<Slice>& fields,
+                          const std::vector<std::string>& fields,
                           std::vector<std::string>* values) {
   int32_t version = 0;
   std::string value;
@@ -238,7 +238,7 @@ Status RedisHashes::HMGet(const Slice& key,
 }
 
 Status RedisHashes::HGetall(const Slice& key,
-                            std::vector<BlackWidow::StringFieldValue>* fvs) {
+                            std::vector<BlackWidow::FieldValue>* fvs) {
   rocksdb::ReadOptions read_options;
   const rocksdb::Snapshot* snapshot;
 
@@ -426,12 +426,12 @@ Status RedisHashes::HIncrby(const Slice& key, const Slice& field, int64_t value,
   return db_->Write(default_write_options_, &batch);
 }
 
-Status RedisHashes::HDel(const Slice& key, const std::vector<Slice>& fields,
+Status RedisHashes::HDel(const Slice& key, const std::vector<std::string>& fields,
                          int32_t* ret) {
-  std::vector<Slice> filtered_fields;
+  std::vector<std::string> filtered_fields;
   std::unordered_set<std::string> field_set;
   for (auto iter = fields.begin(); iter != fields.end(); ++iter) {
-    std::string field = iter->ToString();
+    std::string field = *iter;
     if (field_set.find(field) == field_set.end()) {
       field_set.insert(field);
       filtered_fields.push_back(*iter);
