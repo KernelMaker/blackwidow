@@ -42,6 +42,10 @@ Status RedisStrings::Get(const Slice& key, std::string* value) {
   return s;
 }
 
+Status RedisStrings::GetBit(const Slice& key, int64_t offset, int32_t* ret) {
+
+}
+
 Status RedisStrings::MSet(const std::vector<BlackWidow::KeyValue>& kvs) {
   std::string pre_key, cur_key;
   std::vector<BlackWidow::KeyValue> tmp_kvs(kvs);

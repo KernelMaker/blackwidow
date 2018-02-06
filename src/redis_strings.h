@@ -23,6 +23,7 @@ class RedisStrings : public Redis {
   // Strings Commands
   Status Set(const Slice& key, const Slice& value);
   Status Get(const Slice& key, std::string* value);
+  Status GetBit(const Slice& key, int64_t offset, int32_t* ret);
   Status MSet(const std::vector<BlackWidow::KeyValue>& kvs);
   Status MGet(const std::vector<Slice>& keys, std::vector<std::string>* values);
   Status Setnx(const Slice& key, const Slice& value, int32_t* ret);

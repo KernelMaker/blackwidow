@@ -46,6 +46,9 @@ class BlackWidow {
   // the special value nil is returned
   Status Get(const Slice& key, std::string* value);
 
+  // Returns the bit value at offset in the string value stored at key.
+  Status GetBit(const Slice& key, int64_t offset, int32_t* ret);
+
   // Sets the given keys to their respective values
   // MSET replaces existing values with new values
   Status MSet(const std::vector<BlackWidow::KeyValue>& kvs);
