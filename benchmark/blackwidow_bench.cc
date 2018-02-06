@@ -119,7 +119,7 @@ void BenchHGetall() {
     fvs_in.push_back(fv);
   }
   db.HMSet("HGETALL_KEY2", fvs_in);
-  std::vector<Slice> del_keys({"HGETALL_KEY2"});
+  std::vector<std::string> del_keys({"HGETALL_KEY2"});
   std::map<BlackWidow::DataType, rocksdb::Status> type_status;
   db.Del(del_keys, &type_status);
   fvs_in.clear();
