@@ -75,13 +75,7 @@ int64_t BlackWidow::StoreAndGetCursor(int64_t cursor,
     cursors_store_.list_.remove(tail);
     cursors_store_.map_.erase(tail);
   }
-  for (auto it : cursors_store_.map_) {
-    if (cursor < it.first) {
-      break;
-    } else if (cursor == it.first) {
-      cursor++;
-    }
-  }
+
   cursors_store_.list_.push_back(cursor);
   cursors_store_.map_[cursor] = next_key;
   cursors_mutex_->UnLock();
@@ -297,7 +291,7 @@ int64_t BlackWidow::Scan(int64_t cursor, const std::string& pattern,
       if (count == 0 && is_finish) {
         cursor_ret = StoreAndGetCursor(cursor + count_origin, std::string("l"));
         break;
-      } else if (count == 0 && is_finish) {
+      } else if (count == 0 && !is_finish) {
         cursor_ret = StoreAndGetCursor(cursor + count_origin,
                                        std::string("h") + next_key);
         break;

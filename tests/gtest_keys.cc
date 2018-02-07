@@ -39,11 +39,8 @@ TEST_F(KeysTest, ScanTest) {
   kvs.push_back({"SCAN_KEY3", "SCAN_VALUE3"});
   kvs.push_back({"SCAN_KEY4", "SCAN_VALUE4"});
   kvs.push_back({"SCAN_KEY5", "SCAN_VALUE5"});
-  s = db.MSet(kvs);
-  ASSERT_TRUE(s.ok());
 
   // Note: Noise data is used to test the priority between 'match' and 'count'
-  kvs.clear();
   kvs.push_back({"NSCAN_KEY1", "SCAN_VALUE1"});
   kvs.push_back({"NSCAN_KEY2", "SCAN_VALUE2"});
   kvs.push_back({"NSCAN_KEY3", "SCAN_VALUE3"});
@@ -60,10 +57,15 @@ TEST_F(KeysTest, ScanTest) {
   fvs1.push_back({"TEST_FIELD4", "TEST_VALUE4"});
   fvs1.push_back({"TEST_FIELD5", "TEST_VALUE5"});
   s = db.HMSet("SCAN_KEY6", fvs1);
+  s = db.HMSet("SCAN_KEY7", fvs1);
+  s = db.HMSet("SCAN_KEY8", fvs1);
+  s = db.HMSet("SCAN_KEY9", fvs1);
+  s = db.HMSet("SCAN_KEY10", fvs1);
   ASSERT_TRUE(s.ok());
 
   // TODO(shq) other data types
 
+  // Iterate by data types and check data type
   std::vector<std::string> keys;
   cursor_ret = db.Scan(0, "SCAN*", 10, &keys);
   ASSERT_TRUE(s.ok());
@@ -76,11 +78,42 @@ TEST_F(KeysTest, ScanTest) {
 
   keys.clear();
   ASSERT_EQ(cursor_ret, 10);
-  cursor_ret = db.Scan(cursor_ret, "SCAN*", 10, &keys);
+  cursor_ret = db.Scan(cursor_ret, "SCAN*", 5, &keys);
   ASSERT_TRUE(s.ok());
-  ASSERT_EQ(keys.size(), 1);
-  ASSERT_STREQ(keys[0].c_str(), "SCAN_KEY6");
+  ASSERT_EQ(keys.size(), 5);
+  ASSERT_STREQ(keys[0].c_str(), "SCAN_KEY10");
+  ASSERT_STREQ(keys[1].c_str(), "SCAN_KEY6");
+  ASSERT_STREQ(keys[2].c_str(), "SCAN_KEY7");
+  ASSERT_STREQ(keys[3].c_str(), "SCAN_KEY8");
+  ASSERT_STREQ(keys[4].c_str(), "SCAN_KEY9");
+  ASSERT_EQ(cursor_ret, 15);
+
+  keys.clear();
+  cursor_ret = db.Scan(cursor_ret, "SCAN*", 5, &keys);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(keys.size(), 0);
   ASSERT_EQ(cursor_ret, 0);
+
+  // Iterate over data types
+  int64_t cursor_origin;
+  for (; ;) {
+    keys.clear();
+    cursor_origin = cursor_ret;
+    cursor_ret = db.Scan(cursor_ret, "SCAN*", 3, &keys); 
+    if (cursor_ret != 0) {
+      ASSERT_EQ(cursor_ret, cursor_origin + 3);
+    } else {
+      break;
+    }
+  }
+
+  // Repeat scan the same parameters should return the same result
+  for (int32_t i = 0; i < 10; i++) {
+    keys.clear();
+    cursor_ret = db.Scan(3, "SCAN*", 7, &keys); 
+    ASSERT_EQ(keys.size(), 5);
+    ASSERT_EQ(cursor_ret, 10);
+  }
 
   // If the key already expired
   std::map<BlackWidow::DataType, Status> type_status;
@@ -95,7 +128,7 @@ TEST_F(KeysTest, ScanTest) {
   ASSERT_STREQ(keys[1].c_str(), "SCAN_KEY3");
   ASSERT_STREQ(keys[2].c_str(), "SCAN_KEY4");
   ASSERT_STREQ(keys[3].c_str(), "SCAN_KEY5");
-  ASSERT_STREQ(keys[4].c_str(), "SCAN_KEY6");
+  ASSERT_STREQ(keys[4].c_str(), "SCAN_KEY10");
 }
 
 // Expire
