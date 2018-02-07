@@ -41,6 +41,10 @@ TEST_F(StringsTest, GetTest) {
   ASSERT_STREQ(value.c_str(), "TEST_VALUE");
 }
 
+TESF_F(StringsTest, GetBit) {
+
+}
+
 // MSet
 TEST_F(StringsTest, MSetTest) {
   std::vector<BlackWidow::KeyValue> kvs;

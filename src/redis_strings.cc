@@ -43,7 +43,20 @@ Status RedisStrings::Get(const Slice& key, std::string* value) {
 }
 
 Status RedisStrings::GetBit(const Slice& key, int64_t offset, int32_t* ret) {
-
+  std::string value;
+  Status s = db_->Get(default_read_options_, key, &value);
+  if (s.ok() || s.IsNotFound()) {
+    size_t byte = offset >> 3;
+    size_t bit = 7 - (offset & 0x7);
+    if (byte + 1 > value.length()) {  // the offset is beyond the string length
+      *res = 0;
+    } else {
+      *res = value[byte] & (1 << bit);
+    }
+  } else {
+    return s;
+  }
+  return Status::OK();
 }
 
 Status RedisStrings::MSet(const std::vector<BlackWidow::KeyValue>& kvs) {
