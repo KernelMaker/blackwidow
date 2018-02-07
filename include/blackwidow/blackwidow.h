@@ -70,7 +70,7 @@ class BlackWidow {
   // Returns the values of all specified keys. For every key
   // that does not hold a string value or does not exist, the
   // special value nil is returned
-  Status MGet(const std::vector<Slice>& keys, std::vector<std::string>* values);
+  Status MGet(const std::vector<std::string>& keys, std::vector<std::string>* values);
 
   // Set key to hold string value if key does not exist
   // return 1 if the key was set
