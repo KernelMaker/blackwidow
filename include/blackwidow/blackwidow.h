@@ -11,8 +11,6 @@
 #include <vector>
 #include <list>
 
-#include "src/mutex_impl.h"
-
 #include "rocksdb/status.h"
 #include "rocksdb/options.h"
 #include "rocksdb/slice.h"
@@ -24,6 +22,8 @@ using Slice = rocksdb::Slice;
 
 class RedisStrings;
 class RedisHashes;
+class MutexFactory;
+class Mutex;
 class BlackWidow {
  public:
   BlackWidow();
@@ -70,7 +70,8 @@ class BlackWidow {
   // Returns the values of all specified keys. For every key
   // that does not hold a string value or does not exist, the
   // special value nil is returned
-  Status MGet(const std::vector<std::string>& keys, std::vector<std::string>* values);
+  Status MGet(const std::vector<std::string>& keys,
+              std::vector<std::string>* values);
 
   // Set key to hold string value if key does not exist
   // return 1 if the key was set
@@ -208,7 +209,7 @@ class BlackWidow {
   RedisStrings* strings_db_;
   RedisHashes* hashes_db_;
 
-  MutexFactoryImpl mutex_factory_;
+  MutexFactory* mutex_factory_;
 
   LRU<int64_t, std::string> cursors_store_;
   std::shared_ptr<Mutex> cursors_mutex_;

@@ -124,8 +124,8 @@ void BenchHGetall() {
     fvs_in.push_back(fv);
   }
   db.HMSet("HGETALL_KEY2", fvs_in);
-  std::vector<std::string> del_keys({"HGETALL_KEY2"});
-  std::map<BlackWidow::DataType, rocksdb::Status> type_status;
+  std::vector<Slice> del_keys({"HGETALL_KEY2"});
+  std::map<BlackWidow::DataType, Status> type_status;
   db.Del(del_keys, &type_status);
   fvs_in.clear();
   for (size_t i = 0; i < 10000; ++i) {
@@ -170,9 +170,69 @@ void BenchHGetall() {
     << " Field HashTable Cost: "<< cost << "ms" << std::endl;
 }
 
+void BenchScan() {
+  printf("====== Scan ======\n");
+  blackwidow::Options options;
+  options.create_if_missing = true;
+  blackwidow::BlackWidow db;
+  blackwidow::Status s = db.Open(options, "./db");
+
+  if (!s.ok()) {
+    printf("Open db failed, error: %s\n", s.ToString().c_str());
+    return;
+  }
+
+  std::vector<std::thread> jobs;
+  size_t kv_num = 10000000;
+  jobs.clear();
+  auto start = std::chrono::system_clock::now();
+  for (size_t i = 0; i < THREADNUM; ++i) {
+    jobs.emplace_back([&db](size_t kv_num) {
+      for (size_t j = 0; j < kv_num; ++j) {
+        key += std::to_string(j);
+        db.Set(key, value);
+      }
+    }, kv_num);
+  }
+
+  for (auto& job : jobs) {
+    job.join();
+  }
+  auto end = system_clock::now();
+  duration<double> elapsed_seconds = end-start;
+  auto cost = duration_cast<std::chrono::seconds>(elapsed_seconds).count();
+  std::cout << "Test case 1, Set " << THREADNUM * kv_num << " Cost: "
+    << cost << "s QPS: " << (THREADNUM * kv_num) / cost << std::endl;
+
+  // Scan 100000
+  std::vector<std::string> keys;
+  start = system_clock::now();
+  db.Scan(0, "*", 100000, &keys);
+  end = system_clock::now();
+  elapsed_seconds = end - start;
+  cost = duration_cast<seconds>(elapsed_seconds).count();
+  std::cout << "Test case 2, Scan " << 100000 << " Cost: "
+    << cost << "s" << std::endl;
+
+  // Scan 10000000
+  std::vector<std::string> keys;
+  start = system_clock::now();
+  db.Scan(0, "*", kv_num, &keys);
+  end = system_clock::now();
+  elapsed_seconds = end - start;
+  cost = duration_cast<seconds>(elapsed_seconds).count();
+  std::cout << "Test case 3, Scan " << kv_num << " Cost: "
+    << cost << "s" << std::endl;
+}
+
+
 int main(int argc, char** argv) {
-  // benchmark kv
+  // keys
   BenchSet();
-  // benchmark hashes
+
+  // hashes
   BenchHGetall();
+
+  // Iterator
+  BenchScan();
 }

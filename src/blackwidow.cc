@@ -13,9 +13,10 @@ namespace blackwidow {
 
 BlackWidow::BlackWidow() :
   strings_db_(nullptr),
-  hashes_db_(nullptr) {
+  hashes_db_(nullptr),
+  mutex_factory_(new MutexFactoryImpl) {
   cursors_store_.max_size_ = 5000;
-  cursors_mutex_ = mutex_factory_.AllocateMutex();
+  cursors_mutex_ = mutex_factory_->AllocateMutex();
 }
 
 BlackWidow::~BlackWidow() {
