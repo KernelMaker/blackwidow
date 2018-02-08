@@ -10,10 +10,10 @@
 
 #include "blackwidow/blackwidow.h"
 
-#define KEYLENGTH 1024 * 10
-#define VALUELENGTH 1024 * 10
-#define THREADNUM 20
-#define HASH_TABLE_FIELD_SIZE 10000000
+const int KEYLENGTH = 1024 * 10;
+const int VALUELENGTH = 1024 * 10;
+const int THREADNUM = 20;
+const int HASH_TABLE_FIELD_SIZE = 10000000;
 
 using namespace blackwidow;
 using namespace std::chrono;
@@ -189,8 +189,8 @@ void BenchScan() {
   for (size_t i = 0; i < THREADNUM; ++i) {
     jobs.emplace_back([&db](size_t kv_num) {
       for (size_t j = 0; j < kv_num; ++j) {
-        key += std::to_string(j);
-        db.Set(key, value);
+        std::string key_prefix = key + std::to_string(j);
+        db.Set(key_prefix, value);
       }
     }, kv_num);
   }
@@ -215,7 +215,7 @@ void BenchScan() {
     << cost << "s" << std::endl;
 
   // Scan 10000000
-  std::vector<std::string> keys;
+  keys.clear();
   start = system_clock::now();
   db.Scan(0, "*", kv_num, &keys);
   end = system_clock::now();
