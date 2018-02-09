@@ -326,6 +326,9 @@ TEST_F(HashesTest, HIncrbyfloat) {
   s = db.HGet("HINCRBYFLOAT_KEY", "HINCRBYFLOAT_FIELD", &new_value);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(new_value, "12.3456");
+  s = db.HLen("HINCRBYFLOAT_KEY", &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 1);
 
   // If the current field content are not parsable as a double precision
   // floating point number
@@ -335,6 +338,9 @@ TEST_F(HashesTest, HIncrbyfloat) {
   s = db.HIncrbyfloat("HINCRBYFLOAT_KEY", "HINCRBYFLOAT_STR_FIELD",
           "123.456", &new_value);
   ASSERT_TRUE(s.IsInvalidArgument());
+  s = db.HLen("HINCRBYFLOAT_KEY", &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 2);
 
   // If field does not exist the value is set to 0 before the
   // operation is performed
@@ -345,6 +351,9 @@ TEST_F(HashesTest, HIncrbyfloat) {
   s = db.HGet("HINCRBYFLOAT_KEY", "HINCRBYFLOAT_NOT_EXIST_FIELD", &new_value);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(new_value, "65.4321");
+  s = db.HLen("HINCRBYFLOAT_KEY", &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 3);
 
   s = db.HSet("HINCRBYFLOAT_KEY", "HINCRBYFLOAT_NUM_FIELD", "1000", &ret);
   ASSERT_TRUE(s.ok());
@@ -366,6 +375,10 @@ TEST_F(HashesTest, HIncrbyfloat) {
   s = db.HGet("HINCRBYFLOAT_KEY", "HINCRBYFLOAT_NUM_FIELD", &new_value);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(new_value, "1000");
+
+  s = db.HLen("HINCRBYFLOAT_KEY", &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 4);
 
   // ***** Special test *****
   // case 1
@@ -460,6 +473,10 @@ TEST_F(HashesTest, HIncrbyfloat) {
   s = db.HGet("HINCRBYFLOAT_KEY", "HINCRBYFLOAT_SP_FIELD9", &new_value);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(new_value, "0.456789");
+
+  s = db.HLen("HINCRBYFLOAT_KEY", &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 13);
 }
 
 // HDel

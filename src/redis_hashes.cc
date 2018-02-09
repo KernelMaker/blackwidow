@@ -534,7 +534,6 @@ Status RedisHashes::HIncrbyfloat(const Slice& key, const Slice& field,
         if (LongDoubleToStr(total, new_value) == -1) {
           return Status::InvalidArgument("Overflow");
         }
-        LongDoubleToStr(total, new_value);
         batch.Put(handles_[1], hashes_data_key.Encode(), *new_value);
       } else if (s.IsNotFound()) {
         LongDoubleToStr(long_double_by, new_value);
