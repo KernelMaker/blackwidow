@@ -20,6 +20,8 @@ int main() {
     printf("Open failed, error: %s\n", s.ToString().c_str());
     return -1;
   }
+
+  int32_t ret;
   // Set
   s = db.Set("TEST_KEY", "TEST_VALUE");
   printf("Set return: %s\n", s.ToString().c_str());
@@ -29,8 +31,17 @@ int main() {
   s = db.Get("TEST_KEY", &value);
   printf("Get return: %s, value: %s\n", s.ToString().c_str(), value.c_str());
 
+  // SetBit
+  s = db.SetBit("SETBIT_KEY", 7, 1, &ret);
+  printf("SetBit return: %s, value: %s, ret: %d\n",
+      s.ToString().c_str(), value.c_str(), ret);
+
+  // GetBit
+  s = db.GetBit("GETBIT_KEY", 7, &ret);
+  printf("GetBit return: %s, value: %s, ret: %d\n",
+      s.ToString().c_str(), value.c_str(), ret);
+
   // Setnx
-  int32_t ret;
   s = db.Setnx("TEST_KEY", "TEST_VALUE", &ret);
   printf("Setnx return: %s, value: %s, ret: %d\n",
       s.ToString().c_str(), value.c_str(), ret);

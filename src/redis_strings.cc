@@ -42,16 +42,71 @@ Status RedisStrings::Get(const Slice& key, std::string* value) {
   return s;
 }
 
+Status RedisStrings::SetBit(const Slice& key, int64_t offset, int32_t value, int32_t* ret) {
+  std::string old_value;
+  if (offset < 0) {
+    return Status::InvalidArgument("offset < 0");
+  }
+
+  ScopeRecordLock l(lock_mgr_, key);
+  Status s = db_->Get(default_read_options_, key, &old_value);
+  if (s.ok() || s.IsNotFound()) {
+    ParsedStringsValue parsed_strings_value(old_value);
+    if (parsed_strings_value.IsStale()) {
+      old_value.clear();
+    } else {
+      parsed_strings_value.StripSuffix();
+    }
+    // Get current values
+    size_t byte = offset >> 3;
+    size_t bit = 7 - (offset & 0x7);
+    int32_t byteval;
+    size_t value_lenth = old_value.length();
+    if (byte + 1 > value_lenth) {
+      *ret = 0;
+      byteval = 0;
+    } else {
+      *ret = old_value[byte] & (1 << bit);
+      byteval = old_value[byte];
+    }
+
+    // Bit does not change, return
+    if (*ret == value) {
+      return Status::OK();
+    }
+
+    // Update byte with new bit value
+    byteval &= ~(1 << bit); // set the original value as zero
+    byteval |= ((value & 0x1) << bit);
+    if (byte + 1 <= value_lenth) {
+      old_value.replace(byte, 1, static_cast<char>(byteval), 1);
+    } else {
+      old_value.append(byte - value_lenth, 0);
+      old_value.append(1, static_cast<char>(byteval));
+    }
+    StringsValue strings_value(old_value);
+    return db_->Put(default_write_options_, key, strings_value.Encode());
+  } else {
+    return s;
+  }
+}
+
 Status RedisStrings::GetBit(const Slice& key, int64_t offset, int32_t* ret) {
   std::string value;
   Status s = db_->Get(default_read_options_, key, &value);
   if (s.ok() || s.IsNotFound()) {
-    size_t byte = offset >> 3;
-    size_t bit = 7 - (offset & 0x7);
-    if (byte + 1 > value.length()) {  // the offset is beyond the string length
-      *res = 0;
+    ParsedStringsValue parsed_strings_value(value);
+    if (parsed_strings_value.IsStale()) {
+      *ret = 0;
     } else {
-      *res = value[byte] & (1 << bit);
+      parsed_strings_value.StripSuffix();
+      size_t byte = offset >> 3;
+      size_t bit = 7 - (offset & 0x7);
+      if (byte + 1 > value.length()) {  // the offset is beyond the string length
+        *ret = 0;
+      } else {
+        *ret = value[byte] & (1 << bit);
+      }
     }
   } else {
     return s;
@@ -158,9 +213,6 @@ Status RedisStrings::Setrange(const Slice& key, int32_t offset,
     return Status::InvalidArgument("offset < 0");
   }
 
-  if (value.size() + offset > (1<<29)) {
-    return Status::InvalidArgument("too big");
-  }
   ScopeRecordLock l(lock_mgr_, key);
   Status s = db_->Get(default_read_options_, key, &old_value);
   if (s.ok()) {

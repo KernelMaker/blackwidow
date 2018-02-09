@@ -41,8 +41,46 @@ TEST_F(StringsTest, GetTest) {
   ASSERT_STREQ(value.c_str(), "TEST_VALUE");
 }
 
-TESF_F(StringsTest, GetBit) {
+// SetBit
+TEST_F(StringsTest, SetBitTest) {
+  int32_t ret;
+  s = db.SetBit("SETBIT_KEY", 7, 1, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 0);
 
+  s = db.SetBit("SETBIT_KEY", 7, 0, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 1);
+
+  std::string value;
+  s = db.Get("SETBIT_KEY", &value);
+  ASSERT_TRUE(s.ok());
+  ASSERT_STREQ(value.c_str(), "\x00");
+
+  // The offset argument is less than 0
+  s = db.SetBit("SETBIT_KEY", -1, 0, &ret);
+  ASSERT_TRUE(s.IsInvalidArgument());
+}
+
+// GetBit
+TEST_F(StringsTest, GetBitTest) {
+  int32_t ret;
+  s = db.SetBit("GETBIT_KEY", 7, 1, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 0);
+
+  s = db.GetBit("GETBIT_KEY", 0, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 0);
+
+  s = db.GetBit("GETBIT_KEY", 7, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 1);
+
+  // The offset is beyond the string length
+  s = db.GetBit("GETBIT_KEY", 100, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 0);
 }
 
 // MSet
@@ -111,10 +149,6 @@ TEST_F(StringsTest, SetrangeTest) {
 
   // If the offset less than 0
   s = db.Setrange("SETRANGE_KEY", -1, "REDIS", &ret);
-  ASSERT_TRUE(s.IsInvalidArgument());
-
-  // Beyond the maximum offset(2^29-1)
-  s = db.Setrange("SETRANGE_KEY", 536870912, "REDIS", &ret);
   ASSERT_TRUE(s.IsInvalidArgument());
 }
 
