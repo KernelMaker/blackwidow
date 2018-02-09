@@ -192,10 +192,10 @@ int LongDoubleToStr(long double ldval, std::string* value) {
       /* Libc in odd systems (Hi Solaris!) will format infinite in a
       * different way, so better to handle it in an explicit way. */
       if (ldval > 0) {
-        memcpy(buf,"inf",3);
+        memcpy(buf, "inf", 3);
         len = 3;
       } else {
-        memcpy(buf,"-inf",4);
+        memcpy(buf, "-inf", 4);
         len = 4;
       }
       return -1;
@@ -205,11 +205,11 @@ int LongDoubleToStr(long double ldval, std::string* value) {
        * way that is "non surprising" for the user (that is, most small
        * decimal numbers will be represented in a way that when converted
        * back into a string are exactly the same as what the user typed.) */
-      len = snprintf(buf,sizeof(buf),"%.17Lf", ldval);
+      len = snprintf(buf, sizeof(buf), "%.17Lf", ldval);
       /* Now remove trailing zeroes after the '.' */
-      if (strchr(buf,'.') != NULL) {
+      if (strchr(buf, '.') != NULL) {
           char *p = buf+len-1;
-          while(*p == '0') {
+          while (*p == '0') {
               p--;
               len--;
           }

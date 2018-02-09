@@ -525,7 +525,8 @@ Status RedisHashes::HIncrbyfloat(const Slice& key, const Slice& field,
       if (s.ok()) {
         long double total;
         long double old_value;
-        if (StrToLongDouble(old_value_str.data(), old_value_str.size(), &old_value) == -1) {
+        if (StrToLongDouble(old_value_str.data(),
+                    old_value_str.size(), &old_value) == -1) {
           return Status::InvalidArgument("Hash value is not a vaild float");
         }
 
