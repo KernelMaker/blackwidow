@@ -483,6 +483,8 @@ Status RedisHashes::HIncrby(const Slice& key, const Slice& field, int64_t value,
     Int64ToStr(buf, 32, value);
     batch.Put(handles_[1], hashes_data_key.Encode(), buf);
     *ret = value;
+  } else {
+    return s;
   }
   return db_->Write(default_write_options_, &batch);
 }
