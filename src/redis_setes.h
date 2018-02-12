@@ -24,6 +24,10 @@ class RedisSetes : public Redis {
       const std::string& db_path) override;
   virtual Status CompactRange(const rocksdb::Slice* begin,
       const rocksdb::Slice* end) override;
+
+  // Keys Commands
+  virtual Status Expire(const Slice& key, int32_t ttl) override;
+  virtual Status Del(const Slice& key) override;
   private:
     std::vector<rocksdb::ColumnFamilyHandle*> handles_;
 };

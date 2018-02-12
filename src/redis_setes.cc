@@ -55,6 +55,46 @@ Status RedisSetes::Open(const rocksdb::Options& options,
   return rocksdb::DB::Open(db_ops, db_path, column_families, &handles_, &db_);
 }
 
+Status RedisSetes::Expire(const Slice& key, int32_t ttl) {
+  std::string meta_value;
+  ScopeRecordLock l(lock_mgr_, key);
+  Status s = db_->Get(default_read_options_, handles_[0], key, &meta_value);
+  if (s.ok()) {
+    ParsedSetesMetaValue parsed_setes_meta_value(&meta_value);
+    if (parsed_setes_meta_value.IsStale()) {
+      return Status::NotFound("Stale");
+    }
+    if (ttl > 0) {
+      parsed_setes_meta_value.SetRelativeTimestamp(ttl);
+      s = db_->Put(default_write_options_, handles_[0], key, meta_value);
+    } else {
+      parsed_setes_meta_value.set_count(0);
+      parsed_setes_meta_value.UpdateVersion();
+      parsed_setes_meta_value.set_timestamp(0);
+      s = db_->Put(default_write_options_, handles_[0], key, meta_value);
+    }
+  }
+  return s;
+}
+
+Status RedisSetes::Del(const Slice& key) {
+  std::string meta_value;
+  ScopeRecordLock l(lock_mgr_, key);
+  Status s = db_->Get(default_read_options_, handles_[0], key, &meta_value);
+  if (s.ok()) {
+    ParsedSetesMetaValue parsed_setes_meta_value(&meta_value);
+    if (parsed_setes_meta_value.IsStale()) {
+      return Status::NotFound("Stale");
+    } else {
+      parsed_setes_meta_value.set_count(0);
+      parsed_setes_meta_value.UpdateVersion();
+      parsed_setes_meta_value.set_timestamp(0);
+      s = db_->Put(default_write_options_, handles_[0], key, meta_value);
+    }
+  }
+  return s;
+}
+
 Status RedisSetes::CompactRange(const rocksdb::Slice* begin,
     const rocksdb::Slice* end) {
   Status s = db_->CompactRange(default_compact_range_options_,
