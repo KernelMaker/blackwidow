@@ -8,6 +8,7 @@
 
 #include <string>
 #include <vector>
+#include <unordered_set>
 
 #include "src/redis.h"
 #include "blackwidow/blackwidow.h"
@@ -18,6 +19,11 @@ class RedisSetes : public Redis {
   public:
     RedisSetes() = default;
     ~RedisSetes();
+
+  // Setes Commands
+  Status SAdd(const Slice& key,
+              const std::vector<std::string>& members, int32_t* ret);
+  Status SCard(const Slice& key, int32_t* ret);
 
   // Common Commands
   virtual Status Open(const rocksdb::Options& options,
