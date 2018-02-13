@@ -90,6 +90,9 @@ Status BlackWidow::BitCount(const Slice& key, int32_t start_offset,
   return strings_db_->BitCount(key, start_offset, end_offset, ret, have_range);
 }
 
+Status BlackWidow::BitOp(BitOpType op, const std::string& dest_key, const std::vector<std::string>& src_keys, int64_t* result_length) {
+  return strings_db_->BitOp(op, dest_key, src_keys, result_length);
+}
 Status BlackWidow::Decrby(const Slice& key, int64_t value, int64_t* ret) {
   return strings_db_->Decrby(key, value, ret);
 }

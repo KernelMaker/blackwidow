@@ -38,6 +38,14 @@ class BlackWidow {
     }
   };
 
+  enum BitOpType {
+    kBitOpNot = 1,
+    kBitOpAnd,
+    kBitOpOr,
+    kBitOpXor,
+    kBitOpDefault 
+  };
+
   // Set key to hold the string value. if key
   // already holds a value, it is overwritten
   Status Set(const Slice& key, const Slice& value);
@@ -81,6 +89,8 @@ class BlackWidow {
   // note: if need to specified offset, set have_range to true
   Status BitCount(const Slice& key, int32_t start_offset, int32_t end_offset,
                   int32_t* ret, bool have_range);
+
+  Status BitOp(BitOpType op, const std::string& dest_key, const std::vector<std::string>& src_keys, int64_t* result_length);
 
   // Decrements the number stored at key by decrement
   // return the value of key after the decrement

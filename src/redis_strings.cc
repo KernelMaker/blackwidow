@@ -347,6 +347,24 @@ Status RedisStrings::BitCount(const Slice& key,
   return Status::OK();
 }
 
+
+int64_t BitOpGetSrcValue()
+Status RedisStrings::BitOp(BitOpType op, const std::string& dest_key, const std::vector<std::string>& src_keys, int64_t* result_length) {
+  if (op == kBitOpNot && src_keys.size() != 1) {
+    return Status::InvalidArgument("bitop the number of source keys is not right");
+  } else if (src_keys.size() < 1) {
+    return Status::InvalidArgument("bitop the number of source keys is not right");
+  }
+
+  std::vector<std::string> src_values;
+  int64_t max_len = BitOpGetSrcValue(src_keys, src_values);
+  std::string dest_value = BitOpOperate(op, src_values, max_len, min_len);
+  *ret = dest_value.size();
+  StringsValue strings_value(dest_value);
+  ScopeRecordLock l(lock_mgr_, dest_key);
+  return db_->Put(default_write_options_, dest_key, strings_value.Encode());
+}
+
 Status RedisStrings::Decrby(const Slice& key, int64_t value, int64_t* ret) {
   std::string old_value;
   std::string new_value;
