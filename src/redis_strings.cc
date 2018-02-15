@@ -42,6 +42,22 @@ Status RedisStrings::Get(const Slice& key, std::string* value) {
   return s;
 }
 
+Status RedisStrings::GetSet(const Slice& key, const Slice& value, std::string* old_value) {
+  Status s = db_->Get(default_read_options_, key, old_value);
+  if (s.ok()) {
+    ParsedStringsValue parsed_strings_value(old_value);
+    if (parsed_strings_value.IsStale()) {
+      old_value->clear();
+    } else {
+      parsed_strings_value.StripSuffix();
+    }
+  } else if (!s.IsNotFound()) {
+    return s; 
+  }
+  StringsValue strings_value(value);
+  return db_->Put(default_write_options_, key, strings_value.Encode());
+}
+
 Status RedisStrings::SetBit(const Slice& key, int64_t offset, int32_t value, int32_t* ret) {
   std::string old_value;
   if (offset < 0) {
@@ -205,6 +221,31 @@ Status RedisStrings::Setnx(const Slice& key, const Slice& value, int32_t* ret) {
   return s;
 }
 
+Status RedisStrings::MSetnx(const std::vector<BlackWidow::KeyValue>& kvs,
+                            int32_t* ret) {
+  Status s;
+  bool exists = false;
+  *ret = 0;
+  std::string value;
+  for (size_t i = 0; i < kvs.size(); i++) {
+    s = db_->Get(default_read_options_, kvs[i].key, &value);
+    if (s.ok()) {
+      ParsedStringsValue parsed_strings_value(&old_value);
+      if (!parsed_strings_value.IsStale()) {
+        exists = true;
+        break;
+      }
+    }
+  }
+  if (!exists) {
+    s = MSet(kvs);
+    if (s.ok()) {
+      *ret = 1; 
+    }
+  }
+  return s;
+}
+
 Status RedisStrings::Setrange(const Slice& key, int32_t offset,
                               const Slice& value, int32_t* ret) {
   std::string old_value;
@@ -348,8 +389,66 @@ Status RedisStrings::BitCount(const Slice& key,
 }
 
 
-int64_t BitOpGetSrcValue()
-Status RedisStrings::BitOp(BitOpType op, const std::string& dest_key, const std::vector<std::string>& src_keys, int64_t* result_length) {
+int64_t BitOpGetSrcValue(const std::vector<std::string>& src_keys, std::vector<std::string>* src_values) {
+  Status s;
+  int64_t max_len = 0;
+  for (int i = 0; i < src_keys.size(); i++) {
+    std::string value;
+    s = db_->Get(default_read_options_, src_keys[i], &value);
+    if (s.ok()) {
+      src_values.push_back(value);
+      value_len = value.size();
+    } else if (s.IsNotFound()) {
+      src_values.push_back(std::string(""));
+      value_len = 0;
+    }
+    max_len = std::max(max_len, value_len);
+  }
+  return max_len;
+}
+
+std::string BitOpOperate(BitOpType op, const std::vector<std::string> &src_values, int64_t max_len) {
+  char dest_value[max_len];
+  
+  char byte, output;
+  for (int64_t j = 0; j < max_len; j++) {
+    if (j < src_values[0].size()) {
+      output = src_values[0][j];
+    } else {
+      output = 0;
+    }
+    if (op == kBitOpNot) {
+      output = ~(output);
+    }
+    for (size_t i = 1; i < src_values.size(); i++) {
+      if (src_values[i].size() - 1 >= j) {
+        byte = src_values[i][j];
+      } else {
+        byte = 0;
+      }
+      switch (op) {
+        case kBitOpNot:
+          break;
+        case kBitOpAnd:
+          output &= byte;
+          break;
+        case kBitOpOr:
+          output |= byte;
+          break;
+        case kBitOpXor:
+          output ^= byte;
+          break;
+        case kBitOpDefault:
+          break;
+      }
+    }
+    dest_value[j] = output;
+  }
+  return std::string(dest_value);
+}
+
+Status RedisStrings::BitOp(BlackWidow::BitOpType op, const std::string& dest_key,
+                           const std::vector<std::string>& src_keys, int64_t* ret) {
   if (op == kBitOpNot && src_keys.size() != 1) {
     return Status::InvalidArgument("bitop the number of source keys is not right");
   } else if (src_keys.size() < 1) {
@@ -360,9 +459,193 @@ Status RedisStrings::BitOp(BitOpType op, const std::string& dest_key, const std:
   int64_t max_len = BitOpGetSrcValue(src_keys, src_values);
   std::string dest_value = BitOpOperate(op, src_values, max_len, min_len);
   *ret = dest_value.size();
+
   StringsValue strings_value(dest_value);
   ScopeRecordLock l(lock_mgr_, dest_key);
   return db_->Put(default_write_options_, dest_key, strings_value.Encode());
+}
+
+int32_t GetBitPos(const unsigned char* s, unsigned int bytes, int bit) {
+  uint64_t word = 0;
+  uint64_t skip_val = 0;
+  uint64_t * l = (uint64_t *) s;
+  int pos = 0;
+  if (bit == 0) {
+    skip_val = std::numeric_limits<uint64_t>::max();
+  } else {
+    skip_val = 0;
+  }
+  // skip 8 bytes at one time, find the first int64 that should not be skipped
+  while (bytes >= sizeof(*l)) {
+    if (*l != skip_val) {
+      break;
+    }
+    l++;
+    bytes = bytes - sizeof(*l);
+    pos = pos + 8 * sizeof(*l);
+  }
+  unsigned char * c = (unsigned char *) l;
+  for (unsigned int j = 0; j < sizeof(*l); j++) {
+    word = word << 8;
+    if (bytes) {
+      word = word | *c;
+      c++;
+      bytes --;
+    }
+  }
+  if (bit == 1 && word == 0) {
+    return -1;
+  }
+  // set each bit of mask to 0 except msb
+  uint64_t mask = std::numeric_limits<uint64_t>::max();
+  mask = mask >> 1;
+  mask = ~(mask);
+  while (mask) {
+    if (((word & mask) != 0) == bit) {
+      return pos;
+    }
+    pos++;
+    mask = mask >> 1;
+  }
+  return pos;
+}
+
+Status RedisStrings::BitPos(const Slice& key, int32_t bit,
+                            int32_t* ret) {
+  Status s;
+  std::string value;
+  s = db_->Get(default_read_options_, key, &value);
+  if (s.ok()) {
+    ParsedStringsValue parsed_strings_value(&value);
+    if (parsed_strings_value.IsStale()) {
+      if (bit_value == 1) {
+        *ret = -1;
+      } else if (bit_value == 0) {
+        *ret = 0;
+      }
+      return Status::NotFound("Stale"); 
+    } else {
+      const unsigned char* bit_value = 
+        reinterpret_cast<const unsigned char* >(value.data());
+      int64_t value_length = value.length();
+      int64_t start_offset = 0;
+      int64_t end_offset = std::max(value_length - 1, 0);
+      int bytes = end_offset - start_offset + 1;
+      int pos = GetBitPos(bit_value + start_offset, bytes, bit);
+      if (pos != -1) {
+        pos = pos + 8 * start_offset;
+      }
+      *ret = pos;
+    } 
+  } else {
+    return s;
+  }
+  return Status::OK();
+}
+
+Status RedisStrings::BitPos(const Slice& key, int32_t bit,
+                            int32_t start_offset, int32_t* ret) {
+  Status s;
+  std::string value;
+  s = db_->Get(default_read_options_, key, &value);
+  if (s.ok()) {
+    ParsedStringsValue parsed_strings_value(&value);
+    if (parsed_strings_value.IsStale()) {
+      if (bit_value == 1) {
+        *ret = -1;
+      } else if (bit_value == 0) {
+        *ret = 0;
+      }
+      return Status::NotFound("Stale"); 
+    } else {
+      const unsigned char* bit_value = 
+        reinterpret_cast<const unsigned char* >(value.data());
+      int64_t value_length = value.length();
+      int64_t end_offset = std::max(value_length - 1, 0);
+      if (start_offset < 0) {
+        start_offset = start_offset + value_length;
+      }
+      if (start_offset < 0) {
+        start_offset = 0;
+      }
+      if (start_offset > end_offset) {
+        *ret = -1;
+        return Status::OK();
+      }
+      if (start_offset > value_length - 1) {
+        *ret = -1;
+        return Status::OK();
+      }
+      int bytes = end_offset - start_offset + 1;
+      int pos = GetBitPos(bit_value + start_offset, bytes, bit);
+      if (pos != -1) {
+        pos = pos + 8 * start_offset;
+      }
+      *ret = pos;
+    }
+  } else {
+    return s;
+  }
+  return Status::OK();
+}
+
+Status RedisStrings::BitPos(const Slice& key, int32_t bit,
+                            int32_t start_offset, int32_t end_offset,
+                            int33_t* ret) {
+  Status s;
+  std::string value;
+  s = db_->Get(default_read_options_, key, &value);
+  if (s.ok()) {
+    ParsedStringsValue parsed_strings_value(&value);
+    if (parsed_strings_value.IsStale()) {
+      if (bit_value == 1) {
+        *ret = -1;
+      } else if (bit_value == 0) {
+        *ret = 0;
+      }
+      return Status::NotFound("Stale"); 
+    } else {
+      const unsigned char* bit_value = 
+        reinterpret_cast<const unsigned char* >(value.data());
+        int64_t value_length = value.length();
+        if (start_offset < 0) {
+            start_offset = start_offset + value_length;
+        }
+        if (start_offset < 0) {
+            start_offset = 0;
+        }
+        if (end_offset < 0) {
+            end_offset = end_offset + value_length;
+        }
+        // converting to int64_t just avoid warning 
+        if (end_offset > static_cast<int64_t>(value.length()) - 1) {
+            end_offset = value_length - 1;
+        }
+        if (end_offset < 0) {
+            end_offset = 0;
+        }
+        if (start_offset > end_offset) {
+            *ret = -1;
+            return Status::OK();
+        }
+        if (start_offset > value_length - 1) {
+            *ret = -1;
+            return Status::OK();
+        }
+
+        int bytes = end_offset - start_offset + 1;
+        int pos = GetBitPos(bit_value + start_offset, bytes, bit);
+        if (pos == (8 * bytes) && bit_val == 0)
+            pos = -1;
+        if (pos != -1) {
+            pos = pos + 8 * start_offset;
+        }
+        *ret = pos;
+    } 
+  } else {
+    return s;
+  }
+  return Status::OK();
 }
 
 Status RedisStrings::Decrby(const Slice& key, int64_t value, int64_t* ret) {
@@ -396,6 +679,83 @@ Status RedisStrings::Decrby(const Slice& key, int64_t value, int64_t* ret) {
   } else if (s.IsNotFound()) {
     *ret = -value;
     new_value = std::to_string(*ret);
+    StringsValue strings_value(new_value);
+    return db_->Put(default_write_options_, key, strings_value.Encode());
+  } else {
+    return s;
+  }
+}
+
+Status RedisStrings::Incrby(const Slice& key, int64_t value, int64_t* ret) {
+  std::string old_value;
+  std::string new_value;
+  ScopeRecordLock l(lock_mgr_, key);
+  Status s = db_->Get(default_read_options_, key, &old_value);
+  if (s.ok()) {
+    ParsedStringsValue parsed_strings_value(&old_value);
+    if (parsed_strings_value.IsStale()) {
+      *ret = value;
+      char buf[32];
+      Int64ToStr(buf, 32, value);
+      StringsValue strings_value(buf);
+      return db_->Put(default_write_options_, key, strings_value.Encode());
+    } else {
+      parsed_strings_value.StripSuffix();
+      char* end = nullptr;
+      int64_t ival = strtoll(old_value.c_str(), &end, 10);
+      if (*end != 0) {
+        return Status::InvalidArgument("value is not a integer");
+      }
+      if ((value >= 0 && LLONG_MIN - value > ival) ||
+          (value < 0 && LLONG_MAX - value < ival)) {
+        return Status::InvalidArgument("Overflow");
+      }
+      *ret = ival + value;
+      char buf[32];
+      Int64ToStr(buf, 32, *ret);
+      StringsValue strings_value(buf);
+      return db_->Put(default_write_options_, key, strings_value.Encode());
+    }
+  } else if (s.IsNotFound()) {
+    *ret = value;
+    char buf[32];
+    Int64ToStr(buf, 32, value);
+    StringsValue strings_value(buf);
+    return db_->Put(default_write_options_, key, strings_value.Encode());
+  } else {
+    return s;
+  }
+}
+
+Status RedisStrings::Incrbyfloat(const Slice& key, const Slice& value, std::string* ret) {
+  std::string old_value, new_value;
+  long double long_double_by;
+  if (StrToLongDouble(value.data(), value.size(), &long_double_by) == -1) {
+    return Status::InvalidArgument("Value is not a vaild float");
+  }
+  ScopeRecordLock l(lock_mgr_, key);
+  Status s = db_->Get(default_read_options_, key, &old_value);
+  if (s.ok()) {
+    ParsedStringsValue parsed_strings_value(&old_value);
+    if (parsed_strings_value.IsStale()) {
+      LongDoubleToStr(long_double_by, new_value);
+      StringsValue strings_value(new_value);
+      return db_->Put(default_write_options_, key, strings_value.Encode());
+    } else {
+      long double total, old_number;
+      if (StrToLongDouble(old_value.data(),
+                          old_value.size(), &old_number) == -1) {
+        return Status::InvalidArgument("Value is not a vaild float");
+      }
+      total = old_number + long_double_by;
+      if (LongDoubleToStr(total, new_value) == -1) {
+        return Status::InvalidArgument("Overflow");
+      }
+      StringsValue strings_value(new_value);
+      return db_->Put(default_write_options_, key, strings_value.Encode());
+    }
+  } else if (s.IsNotFound()) {
+    LongDoubleToStr(long_double_by, new_value);
     StringsValue strings_value(new_value);
     return db_->Put(default_write_options_, key, strings_value.Encode());
   } else {
