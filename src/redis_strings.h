@@ -32,6 +32,8 @@ class RedisStrings : public Redis {
   Status MSetnx(const std::vector<BlackWidow::KeyValue>& kvs, int32_t* ret);
   Status Setrange(const Slice& key, int32_t offset,
                   const Slice& value, int32_t* ret);
+  Status Getrange(const Slice& key, int64_t start, int64_t end,
+                  std::string* ret);
   Status Append(const Slice& key, const Slice& value, int32_t* ret);
   Status BitCount(const Slice& key, int32_t start_offset, int32_t end_offset,
                   int32_t* ret, bool have_offset);

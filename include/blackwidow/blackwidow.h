@@ -87,6 +87,11 @@ class BlackWidow {
   Status Setrange(const Slice& key, int32_t offset,
                   const Slice& value, int32_t* ret);
 
+  // Returns the substring of the string value stored at key,
+  // determined by the offsets start and end (both are inclusive)
+  Status Getrange(const Slice& key, int64_t start, int64_t end,
+                  std::string* ret);
+
   // If key already exists and is a string, this command appends the value at
   // the end of the string
   // return the length of the string after the append operation

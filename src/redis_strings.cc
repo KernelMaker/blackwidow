@@ -289,6 +289,38 @@ Status RedisStrings::Setrange(const Slice& key, int32_t offset,
   return s;
 }
 
+Status RedisStrings::Getrange(const Slice& key, int64_t start, int64_t end,
+                              std::string* ret) {
+  *ret = "";
+  std::string value;
+  Status s = db_->Get(default_read_options_, key, &value);
+  if (s.ok()) {
+    ParsedStringsValue parsed_strings_value(&value);
+    if (parsed_strings_value.IsStale()) {
+      return Status::NotFound("Stale");
+    } else {
+      int64_t size = value.length();
+      int64_t start_t = start >= 0 ? start : size + start;
+      int64_t end_t = end >= 0 ? end : size + end;
+      if (start_t > size - 1 || (start_t != 0 && start_t > end_t) || (start_t != 0 && end_t < 0)) {
+        return Status::OK();
+      }
+      if (start_t < 0) {
+        start_t  = 0;
+      }
+      if (end_t >= size) {
+        end_t = size - 1;
+      }
+      if (start_t == 0 && end_t < 0) {
+        end_t = 0;
+      }
+      *ret = value.substr(start_t, end_t-start_t+1);
+    }
+  } else {
+    return s; 
+  }
+}
+
 Status RedisStrings::Append(const Slice& key, const Slice& value,
     int32_t* ret) {
   std::string old_value;

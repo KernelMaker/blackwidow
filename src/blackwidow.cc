@@ -90,6 +90,11 @@ Status BlackWidow::Setrange(const Slice& key, int32_t offset,
   return strings_db_->Setrange(key, offset, value, ret);
 }
 
+Stataus BlackWidow::Getrange(const Slice& key, int32_t start, int32_t end,
+                            std::string* ret) {
+  return strings_db_->Getrange(key, start, end, ret);
+}
+
 Status BlackWidow::Append(const Slice& key, const Slice& value, int32_t* ret) {
   return strings_db_->Append(key, value, ret);
 }
