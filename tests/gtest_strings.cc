@@ -111,7 +111,7 @@ TEST_F(StringsTest, MSetTest) {
 // MGet
 TEST_F(StringsTest, MGetTest) {
   std::vector<std::string> values;
-  std::vector<rocksdb::Slice> keys {"", "MSET_TEST_KEY1",
+  std::vector<std::string> keys {"", "MSET_TEST_KEY1",
     "MSET_TEST_KEY2", "MSET_TEST_KEY3", "MSET_TEST_KEY_NOT_EXIST"};
   s = db.MGet(keys, &values);
   ASSERT_TRUE(s.ok());
@@ -173,7 +173,7 @@ TEST_F(StringsTest, SetrangeTest) {
   s = db.Get("SETRANGE_KEY", &value);
   ASSERT_STREQ(value.c_str(), "HELLO REDIS");
 
-  std::vector<rocksdb::Slice> keys {"SETRANGE_KEY"};
+  std::vector<std::string> keys {"SETRANGE_KEY"};
   std::map<BlackWidow::DataType, Status> type_status;
   ret = db.Del(keys, &type_status);
   ASSERT_EQ(ret, 1);
@@ -401,7 +401,7 @@ TEST_F(StringsTest, ExpireTest) {
   ASSERT_TRUE(s.ok());
   ret = db.Expire("EXPIRE_KEY", 1, &type_status);
   for (auto it = type_status.begin(); it != type_status.end(); it++) {
-    if (it->first == BlackWidow::DataType::STRINGS) {
+    if (it->first == BlackWidow::DataType::kStrings) {
       ASSERT_TRUE(it->second.ok());
     } else {
       ASSERT_TRUE(it->second.IsNotFound());
@@ -416,16 +416,16 @@ TEST_F(StringsTest, ExpireTest) {
 TEST_F(StringsTest, DelTest) {
   int32_t ret;
   std::map<BlackWidow::DataType, Status> type_status;
-  std::vector<rocksdb::Slice> keys {"DEL_KEY"};
+  std::vector<std::string> keys {"DEL_KEY"};
   s = db.Set("DEL_KEY", "EXPIREVALUE");
   ASSERT_TRUE(s.ok());
   s = db.HSet("DEL_KEY", "DEL_FIELD", "DEL_VALUE", &ret);
   ASSERT_TRUE(s.ok());
   ret = db.Del(keys, &type_status);
   for (auto it = type_status.begin(); it != type_status.end(); it++) {
-    if (it->first == BlackWidow::DataType::STRINGS) {
+    if (it->first == BlackWidow::DataType::kStrings) {
       ASSERT_TRUE(it->second.ok());
-    } else if (it->first == BlackWidow::DataType::HASHES) {
+    } else if (it->first == BlackWidow::DataType::kHashes) {
       ASSERT_TRUE(it->second.ok());
     } else {
       ASSERT_TRUE(it->second.IsNotFound());
