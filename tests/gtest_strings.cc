@@ -45,13 +45,13 @@ TEST_F(StringsTest, GetTest) {
 TEST_F(StringsTest, GetSetTest) {
   std::string value;
   // If the key did not exist
-  s = db.GetSet("GETSET_KEY","GETSET_VALUE", value);
+  s = db.GetSet("GETSET_KEY","GETSET_VALUE", &value);
   ASSERT_TRUE(s.ok());
   ASSERT_STREQ(value.c_str(), "");
 
-  s = db.GetSet("GETSET_KEY","GETSET_VALUE", value);
+  s = db.GetSet("GETSET_KEY","GETSET_VALUE", &value);
   ASSERT_TRUE(s.ok());
-  ASSERT_STREQ(value.c_str(), "GETSET_VALUE")
+  ASSERT_STREQ(value.c_str(), "GETSET_VALUE");
 }
 
 // SetBit
@@ -150,13 +150,12 @@ TEST_F(StringsTest, MSetnxTest) {
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(ret, 0);
 
-  std::vector<BlackWidow::KeyValue> kvs;
-  kvs.push_back({"", "MSET_EMPTY_VALUE"});
+  kvs.clear();
   kvs.push_back({"MSETNX_TEST_KEY1", "MSET_TEST_VALUE1"});
   kvs.push_back({"MSETNX_TEST_KEY2", "MSET_TEST_VALUE2"});
   kvs.push_back({"MSETNX_TEST_KEY3", "MSET_TEST_VALUE3"});
   kvs.push_back({"MSETNX_TEST_KEY3", "MSET_TEST_VALUE3"});
-  s = db.MSet(kvs, &ret);
+  s = db.MSetnx(kvs, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(ret, 1);
 }
@@ -212,7 +211,7 @@ TEST_F(StringsTest, GetrangeTest) {
 
   // If the key is not exist
   s = db.Getrange("GETRANGE_NOT_EXIST_KEY", 0, -1, &value);
-  ASSERT_TRUE(s.ok());
+  ASSERT_TRUE(s.IsNotFound());
   ASSERT_STREQ(value.c_str(), "");
 }
 
@@ -259,35 +258,36 @@ TEST_F(StringsTest, BitOpTest) {
   std::string value;
   s = db.Set("BITOP_KEY1", "FOOBAR");
   ASSERT_TRUE(s.ok());
-  s = db.Set("BITOP_KEY2", "ABCEDF");
+  s = db.Set("BITOP_KEY2", "ABCDEF");
   ASSERT_TRUE(s.ok());
   s = db.Set("BITOP_KEY3", "BLACKWIDOW");
   ASSERT_TRUE(s.ok());
-  std::vector<std::string> src_keys {"BITOP_KEY1", "BITOP_KEY2", "BITOP_KEY3"}
+  std::vector<std::string> src_keys {"BITOP_KEY1", "BITOP_KEY2", "BITOP_KEY3"};
   
   // AND
-  s = db.BitOp(BlackWidow::BitOpType::kBitOpAnd, "BITOP_DESTKEY", src_keys, ret);
+  s = db.BitOp(BlackWidow::BitOpType::kBitOpAnd, "BITOP_DESTKEY", src_keys, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(ret, 10);
   s = db.Get("BITOP_DESTKEY", &value);
   ASSERT_STREQ(value.c_str(), "@@A@AB\x00\x00\x00\x00");
  
   // OR 
-  s = db.BitOp(BlackWidow::BitOpType::kBitOpOr, "BITOP_DESTKEY", src_keys, ret);
+  s = db.BitOp(BlackWidow::BitOpType::kBitOpOr, "BITOP_DESTKEY", src_keys, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(ret, 10);
   s = db.Get("BITOP_DESTKEY", &value);
   ASSERT_STREQ(value.c_str(), "GOOGOWIDOW");
   
   // XOR
-  s = db.BitOp(BlackWidow::BitOpType::kBitOpXor, "BITOP_DESTKEY", src_keys, ret);
+  s = db.BitOp(BlackWidow::BitOpType::kBitOpXor, "BITOP_DESTKEY", src_keys, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(ret, 10);
   s = db.Get("BITOP_DESTKEY", &value);
   ASSERT_STREQ(value.c_str(), "EAMEOCIDOW");
 
   // NOT
-  s = db.BitOp(BlackWidow::BitOpType::kBitOpNot, "BITOP_DESTKEY", src_keys, ret);
+  std::vector<std::string> not_keys {"BITOP_KEY1"};
+  s = db.BitOp(BlackWidow::BitOpType::kBitOpNot, "BITOP_DESTKEY", not_keys, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(ret, 6);
   s = db.Get("BITOP_DESTKEY", &value);
@@ -310,7 +310,9 @@ TEST_F(StringsTest, DecrbyTest) {
   ASSERT_TRUE(s.IsInvalidArgument());
 
   // Less than the minimum number -9223372036854775808
-  s = db.Decrby("DECRBY_MIN_KEY", 9223372036854775807, &ret);
+  s = db.Set("DECRBY_KEY", "-2");
+  ASSERT_TRUE(s.ok());
+  s = db.Decrby("DECRBY_KEY", 9223372036854775807, &ret);
   ASSERT_TRUE(s.IsInvalidArgument());
 }
 
@@ -320,16 +322,18 @@ TEST_F(StringsTest, IncrbyTest) {
   // If the key is not exist
   s = db.Incrby("INCRBY_KEY", 5, &ret);
   ASSERT_TRUE(s.ok());
-  ASSERT_EQ(ret, -5);
+  ASSERT_EQ(ret, 5);
 
   // If the key contains a string that can not be represented as integer
-  s = db.Set("INCRBY_KEY", "DECRBY_VALUE");
+  s = db.Set("INCRBY_KEY", "INCRBY_VALUE");
   ASSERT_TRUE(s.ok());
   s = db.Incrby("INCRBY_KEY", 5, &ret);
   ASSERT_TRUE(s.IsInvalidArgument());
 
-  // Less than the maximum number 9223372036854775808
-  s = db.Incrby("DECRBY_MIN_KEY", 9223372036854775808, &ret);
+  s = db.Set("INCRBY_KEY", "1");
+  ASSERT_TRUE(s.ok());
+  // Less than the maximum number 9223372036854775807
+  s = db.Incrby("INCRBY_KEY", 9223372036854775807, &ret);
   ASSERT_TRUE(s.IsInvalidArgument());
 }
 
@@ -338,10 +342,10 @@ TEST_F(StringsTest, IncrbyfloatTest) {
   std::string value;
   s = db.Set("INCRBYFLOAT_KEY", "10.50");
   ASSERT_TRUE(s.ok());
-  s = db.Incrbyfloat("INCRBYFLOAT_KEY", 0.1, &value);
+  s = db.Incrbyfloat("INCRBYFLOAT_KEY", "0.1", &value);
   ASSERT_TRUE(s.ok());
   ASSERT_STREQ(value.c_str(), "10.6");
-  s = db.Incrbyfloat("INCRBYFLOAT_KEY", -5, &value);
+  s = db.Incrbyfloat("INCRBYFLOAT_KEY", "-5", &value);
   ASSERT_TRUE(s.ok());
   ASSERT_STREQ(value.c_str(), "5.6");
 }
