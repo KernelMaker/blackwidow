@@ -39,10 +39,10 @@ class BlackWidow {
   };
 
   enum BitOpType {
-    kBitOpNot = 1,
-    kBitOpAnd,
+    kBitOpAnd = 1,
     kBitOpOr,
     kBitOpXor,
+    kBitOpNot,
     kBitOpDefault 
   };
 
