@@ -47,7 +47,7 @@ class RedisStrings : public Redis {
                 int32_t* ret);
   Status Decrby(const Slice& key, int64_t value, int64_t* ret);
   Status Incrby(const Slice& key, int64_t value, int64_t* ret);
-  Status Incrbyfloat(const Slice& key, const Slice& value, string* ret);
+  Status Incrbyfloat(const Slice& key, const Slice& value, std::string* ret);
   Status Setex(const Slice& key, const Slice& value, int32_t ttl);
   Status Strlen(const Slice& key, int32_t *len);
 

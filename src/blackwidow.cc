@@ -90,7 +90,7 @@ Status BlackWidow::Setrange(const Slice& key, int32_t offset,
   return strings_db_->Setrange(key, offset, value, ret);
 }
 
-Stataus BlackWidow::Getrange(const Slice& key, int32_t start, int32_t end,
+Status BlackWidow::Getrange(const Slice& key, int64_t start, int64_t end,
                             std::string* ret) {
   return strings_db_->Getrange(key, start, end, ret);
 }

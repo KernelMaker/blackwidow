@@ -56,7 +56,7 @@ class BlackWidow {
 
   // Atomically sets key to value and returns the old value stored at key 
   // Returns an error when key exists but does not hold a string value.
-  Status GetSet(const Slice& key, const Slice& value, std::string* value);
+  Status GetSet(const Slice& key, const Slice& value, std::string* old_value);
 
   // Sets or clears the bit at offset in the string value stored at key
   Status SetBit(const Slice& key, int64_t offset, int32_t value, int32_t* ret);

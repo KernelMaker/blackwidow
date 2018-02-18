@@ -12,6 +12,7 @@
 #include "src/strings_filter.h"
 #include "src/scope_record_lock.h"
 #include "src/scope_snapshot.h"
+#include "src/util.h"
 
 namespace blackwidow {
 
@@ -230,7 +231,7 @@ Status RedisStrings::MSetnx(const std::vector<BlackWidow::KeyValue>& kvs,
   for (size_t i = 0; i < kvs.size(); i++) {
     s = db_->Get(default_read_options_, kvs[i].key, &value);
     if (s.ok()) {
-      ParsedStringsValue parsed_strings_value(&old_value);
+      ParsedStringsValue parsed_strings_value(&value);
       if (!parsed_strings_value.IsStale()) {
         exists = true;
         break;
@@ -420,26 +421,7 @@ Status RedisStrings::BitCount(const Slice& key,
   return Status::OK();
 }
 
-
-int64_t BitOpGetSrcValue(const std::vector<std::string>& src_keys, std::vector<std::string>* src_values) {
-  Status s;
-  int64_t max_len = 0;
-  for (int i = 0; i < src_keys.size(); i++) {
-    std::string value;
-    s = db_->Get(default_read_options_, src_keys[i], &value);
-    if (s.ok()) {
-      src_values.push_back(value);
-      value_len = value.size();
-    } else if (s.IsNotFound()) {
-      src_values.push_back(std::string(""));
-      value_len = 0;
-    }
-    max_len = std::max(max_len, value_len);
-  }
-  return max_len;
-}
-
-std::string BitOpOperate(BitOpType op, const std::vector<std::string> &src_values, int64_t max_len) {
+std::string BitOpOperate(BlackWidow::BitOpType op, const std::vector<std::string> &src_values, int64_t max_len) {
   char dest_value[max_len];
   
   char byte, output;
@@ -487,8 +469,21 @@ Status RedisStrings::BitOp(BlackWidow::BitOpType op, const std::string& dest_key
     return Status::InvalidArgument("bitop the number of source keys is not right");
   }
 
+  int64_t max_len = 0;
   std::vector<std::string> src_values;
-  int64_t max_len = BitOpGetSrcValue(src_keys, src_values);
+  for (int i = 0; i < src_keys.size(); i++) {
+    std::string value;
+    s = db_->Get(default_read_options_, src_keys[i], &value);
+    if (s.ok()) {
+      src_values->push_back(value);
+      value_len = value.size();
+    } else if (s.IsNotFound()) {
+      src_values->push_back(std::string(""));
+      value_len = 0;
+    }
+    max_len = std::max(max_len, value_len);
+  }
+
   std::string dest_value = BitOpOperate(op, src_values, max_len, min_len);
   *ret = dest_value.size();
 
@@ -623,7 +618,7 @@ Status RedisStrings::BitPos(const Slice& key, int32_t bit,
 
 Status RedisStrings::BitPos(const Slice& key, int32_t bit,
                             int32_t start_offset, int32_t end_offset,
-                            int33_t* ret) {
+                            int32_t* ret) {
   Status s;
   std::string value;
   s = db_->Get(default_read_options_, key, &value);
