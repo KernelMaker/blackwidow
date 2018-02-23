@@ -68,7 +68,7 @@ test: $(OBJECTS)
 	@./gtest_keys
 	@./gtest_strings
 	@./gtest_hashes
-  @./gtest_setes
+	@./gtest_setes
 	@./gtest_strings_filter
 	@./gtest_hashes_filter
 	@rm -rf db

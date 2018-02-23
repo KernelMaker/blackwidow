@@ -346,6 +346,7 @@ int64_t BlackWidow::Scan(int64_t cursor, const std::string& pattern,
                                        std::string("h") + next_key);
         break;
       }
+    // TODO(shq) other data types
   }
 
   return cursor_ret;
