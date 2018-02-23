@@ -60,11 +60,13 @@ Status BlackWidow::Get(const Slice& key, std::string* value) {
   return strings_db_->Get(key, value);
 }
 
-Status BlackWidow::GetSet(const Slice& key, const Slice& value, std::string* old_value) {
+Status BlackWidow::GetSet(const Slice& key, const Slice& value,
+                          std::string* old_value) {
   return strings_db_->GetSet(key, value, old_value);
 }
 
-Status BlackWidow::SetBit(const Slice& key, int64_t offset, int32_t value, int32_t* ret) {
+Status BlackWidow::SetBit(const Slice& key, int64_t offset,
+                          int32_t value, int32_t* ret) {
   return strings_db_->SetBit(key, offset, value, ret);
 }
 
@@ -110,23 +112,24 @@ Status BlackWidow::BitCount(const Slice& key, int32_t start_offset,
 }
 
 Status BlackWidow::BitOp(BitOpType op, const std::string& dest_key,
-                         const std::vector<std::string>& src_keys, int64_t* ret) {
+                         const std::vector<std::string>& src_keys,
+                         int64_t* ret) {
   return strings_db_->BitOp(op, dest_key, src_keys, ret);
 }
 
 Status BlackWidow::BitPos(const Slice& key, int32_t bit,
-                          int32_t* ret) {
+                          int64_t* ret) {
   return strings_db_->BitPos(key, bit, ret);
 }
 
 Status BlackWidow::BitPos(const Slice& key, int32_t bit,
-                          int32_t start_offset, int32_t* ret) {
+                          int64_t start_offset, int64_t* ret) {
   return strings_db_->BitPos(key, bit, start_offset, ret);
 }
 
 Status BlackWidow::BitPos(const Slice& key, int32_t bit,
-                          int32_t start_offset, int32_t end_offset,
-                          int32_t* ret) {
+                          int64_t start_offset, int64_t end_offset,
+                          int64_t* ret) {
   return strings_db_->BitPos(key, bit, start_offset, end_offset, ret);
 }
 
@@ -138,7 +141,8 @@ Status BlackWidow::Incrby(const Slice& key, int64_t value, int64_t* ret) {
   return strings_db_->Incrby(key, value, ret);
 }
 
-Status BlackWidow::Incrbyfloat(const Slice& key, const Slice& value, std::string* ret) {
+Status BlackWidow::Incrbyfloat(const Slice& key, const Slice& value,
+                               std::string* ret) {
   return strings_db_->Incrbyfloat(key, value, ret);
 }
 

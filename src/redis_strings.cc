@@ -8,6 +8,7 @@
 #include <memory>
 #include <climits>
 #include <algorithm>
+#include <limits>
 
 #include "src/strings_filter.h"
 #include "src/scope_record_lock.h"
@@ -43,7 +44,8 @@ Status RedisStrings::Get(const Slice& key, std::string* value) {
   return s;
 }
 
-Status RedisStrings::GetSet(const Slice& key, const Slice& value, std::string* old_value) {
+Status RedisStrings::GetSet(const Slice& key, const Slice& value,
+                            std::string* old_value) {
   ScopeRecordLock l(lock_mgr_, key);
   Status s = db_->Get(default_read_options_, key, old_value);
   if (s.ok()) {
@@ -54,13 +56,14 @@ Status RedisStrings::GetSet(const Slice& key, const Slice& value, std::string* o
       parsed_strings_value.StripSuffix();
     }
   } else if (!s.IsNotFound()) {
-    return s; 
+    return s;
   }
   StringsValue strings_value(value);
   return db_->Put(default_write_options_, key, strings_value.Encode());
 }
 
-Status RedisStrings::SetBit(const Slice& key, int64_t offset, int32_t value, int32_t* ret) {
+Status RedisStrings::SetBit(const Slice& key, int64_t offset,
+                            int32_t value, int32_t* ret) {
   std::string old_value;
   if (offset < 0) {
     return Status::InvalidArgument("offset < 0");
@@ -94,7 +97,7 @@ Status RedisStrings::SetBit(const Slice& key, int64_t offset, int32_t value, int
     }
 
     // Update byte with new bit value
-    byteval &= ~(1 << bit); // set the original value as zero
+    byteval &= ~(1 << bit);   //  set the original value as zero
     byteval |= ((value & 0x1) << bit);
     if (byte + 1 <= value_lenth) {
       old_value.replace(byte, 1, static_cast<char>(byteval), 1);
@@ -120,7 +123,8 @@ Status RedisStrings::GetBit(const Slice& key, int64_t offset, int32_t* ret) {
       parsed_strings_value.StripSuffix();
       size_t byte = offset >> 3;
       size_t bit = 7 - (offset & 0x7);
-      if (byte + 1 > value.length()) {  // the offset is beyond the string length
+      // the offset is beyond the string length
+      if (byte + 1 > value.length()) {
         *ret = 0;
       } else {
         *ret = value[byte] & (1 << bit);
@@ -242,7 +246,7 @@ Status RedisStrings::MSetnx(const std::vector<BlackWidow::KeyValue>& kvs,
   if (!exists) {
     s = MSet(kvs);
     if (s.ok()) {
-      *ret = 1; 
+      *ret = 1;
     }
   }
   return s;
@@ -305,7 +309,10 @@ Status RedisStrings::Getrange(const Slice& key, int64_t start, int64_t end,
       int64_t size = value.size();
       int64_t start_t = start >= 0 ? start : size + start;
       int64_t end_t = end >= 0 ? end : size + end;
-      if (start_t > size - 1 || (start_t != 0 && start_t > end_t) || (start_t != 0 && end_t < 0)) {
+      if (start_t > size - 1 ||
+          (start_t != 0 && start_t > end_t) ||
+          (start_t != 0 && end_t < 0)
+          ) {
         return Status::OK();
       }
       if (start_t < 0) {
@@ -321,7 +328,7 @@ Status RedisStrings::Getrange(const Slice& key, int64_t start, int64_t end,
       return Status::OK();
     }
   } else {
-    return s; 
+    return s;
   }
 }
 
@@ -425,8 +432,10 @@ Status RedisStrings::BitCount(const Slice& key,
   return Status::OK();
 }
 
-std::string BitOpOperate(BlackWidow::BitOpType op, const std::vector<std::string> &src_values, int64_t max_len) {
-  char dest_value[max_len];
+std::string BitOpOperate(BlackWidow::BitOpType op,
+                         const std::vector<std::string> &src_values,
+                         int64_t max_len) {
+  char *dest_value = new char[max_len];
 
   char byte, output;
   for (int64_t j = 0; j < max_len; j++) {
@@ -462,16 +471,18 @@ std::string BitOpOperate(BlackWidow::BitOpType op, const std::vector<std::string
     }
     dest_value[j] = output;
   }
-  return std::string(reinterpret_cast<char*>(dest_value), max_len);
+  return std::string(dest_value, max_len);
 }
 
-Status RedisStrings::BitOp(BlackWidow::BitOpType op, const std::string& dest_key,
-                           const std::vector<std::string>& src_keys, int64_t* ret) {
+Status RedisStrings::BitOp(BlackWidow::BitOpType op,
+                           const std::string& dest_key,
+                           const std::vector<std::string>& src_keys,
+                           int64_t* ret) {
   Status s;
   if (op == BlackWidow::kBitOpNot && src_keys.size() != 1) {
-    return Status::InvalidArgument("bitop the number of source keys is not right");
+    return Status::InvalidArgument("the number of source keys is not right");
   } else if (src_keys.size() < 1) {
-    return Status::InvalidArgument("bitop the number of source keys is not right");
+    return Status::InvalidArgument("the number of source keys is not right");
   }
 
   int64_t max_len = 0, value_len = 0;
@@ -493,7 +504,7 @@ Status RedisStrings::BitOp(BlackWidow::BitOpType op, const std::string& dest_key
       src_values.push_back(std::string(""));
       value_len = 0;
     } else {
-      return s; 
+      return s;
     }
     max_len = std::max(max_len, value_len);
   }
@@ -501,7 +512,8 @@ Status RedisStrings::BitOp(BlackWidow::BitOpType op, const std::string& dest_key
   std::string dest_value = BitOpOperate(op, src_values, max_len);
   *ret = dest_value.size();
 
-  StringsValue strings_value(Slice(dest_value.c_str(), static_cast<size_t>(max_len)));
+  StringsValue strings_value(Slice(dest_value.c_str(),
+                                   static_cast<size_t>(max_len)));
   ScopeRecordLock l(lock_mgr_, dest_key);
   return db_->Put(default_write_options_, dest_key, strings_value.Encode());
 }
@@ -509,7 +521,8 @@ Status RedisStrings::BitOp(BlackWidow::BitOpType op, const std::string& dest_key
 int32_t GetBitPos(const unsigned char* s, unsigned int bytes, int bit) {
   uint64_t word = 0;
   uint64_t skip_val = 0;
-  uint64_t * l = (uint64_t *) s;
+  unsigned char* value = const_cast<unsigned char *>(s);
+  uint64_t* l = reinterpret_cast<uint64_t *>(value);
   int pos = 0;
   if (bit == 0) {
     skip_val = std::numeric_limits<uint64_t>::max();
@@ -525,13 +538,13 @@ int32_t GetBitPos(const unsigned char* s, unsigned int bytes, int bit) {
     bytes = bytes - sizeof(*l);
     pos = pos + 8 * sizeof(*l);
   }
-  unsigned char * c = (unsigned char *) l;
+  unsigned char * c = reinterpret_cast<unsigned char *>(l);
   for (unsigned int j = 0; j < sizeof(*l); j++) {
     word = word << 8;
     if (bytes) {
       word = word | *c;
       c++;
-      bytes --;
+      bytes--;
     }
   }
   if (bit == 1 && word == 0) {
@@ -552,7 +565,7 @@ int32_t GetBitPos(const unsigned char* s, unsigned int bytes, int bit) {
 }
 
 Status RedisStrings::BitPos(const Slice& key, int32_t bit,
-                            int32_t* ret) {
+                            int64_t* ret) {
   Status s;
   std::string value;
   s = db_->Get(default_read_options_, key, &value);
@@ -564,20 +577,20 @@ Status RedisStrings::BitPos(const Slice& key, int32_t bit,
       } else if (bit == 0) {
         *ret = 0;
       }
-      return Status::NotFound("Stale"); 
+      return Status::NotFound("Stale");
     } else {
-      const unsigned char* bit_value = 
+      const unsigned char* bit_value =
         reinterpret_cast<const unsigned char* >(value.data());
       int64_t value_length = value.length();
       int64_t start_offset = 0;
       int64_t end_offset = std::max(value_length - 1, static_cast<int64_t>(0));
-      int bytes = end_offset - start_offset + 1;
-      int pos = GetBitPos(bit_value + start_offset, bytes, bit);
+      int64_t bytes = end_offset - start_offset + 1;
+      int64_t pos = GetBitPos(bit_value + start_offset, bytes, bit);
       if (pos != -1) {
         pos = pos + 8 * start_offset;
       }
       *ret = pos;
-    } 
+    }
   } else {
     return s;
   }
@@ -585,7 +598,7 @@ Status RedisStrings::BitPos(const Slice& key, int32_t bit,
 }
 
 Status RedisStrings::BitPos(const Slice& key, int32_t bit,
-                            int32_t start_offset, int32_t* ret) {
+                            int64_t start_offset, int64_t* ret) {
   Status s;
   std::string value;
   s = db_->Get(default_read_options_, key, &value);
@@ -597,9 +610,9 @@ Status RedisStrings::BitPos(const Slice& key, int32_t bit,
       } else if (bit == 0) {
         *ret = 0;
       }
-      return Status::NotFound("Stale"); 
+      return Status::NotFound("Stale");
     } else {
-      const unsigned char* bit_value = 
+      const unsigned char* bit_value =
         reinterpret_cast<const unsigned char* >(value.data());
       int64_t value_length = value.length();
       int64_t end_offset = std::max(value_length - 1, static_cast<int64_t>(0));
@@ -617,8 +630,8 @@ Status RedisStrings::BitPos(const Slice& key, int32_t bit,
         *ret = -1;
         return Status::OK();
       }
-      int bytes = end_offset - start_offset + 1;
-      int pos = GetBitPos(bit_value + start_offset, bytes, bit);
+      int64_t bytes = end_offset - start_offset + 1;
+      int64_t pos = GetBitPos(bit_value + start_offset, bytes, bit);
       if (pos != -1) {
         pos = pos + 8 * start_offset;
       }
@@ -631,8 +644,8 @@ Status RedisStrings::BitPos(const Slice& key, int32_t bit,
 }
 
 Status RedisStrings::BitPos(const Slice& key, int32_t bit,
-                            int32_t start_offset, int32_t end_offset,
-                            int32_t* ret) {
+                            int64_t start_offset, int64_t end_offset,
+                            int64_t* ret) {
   Status s;
   std::string value;
   s = db_->Get(default_read_options_, key, &value);
@@ -644,45 +657,45 @@ Status RedisStrings::BitPos(const Slice& key, int32_t bit,
       } else if (bit == 0) {
         *ret = 0;
       }
-      return Status::NotFound("Stale"); 
+      return Status::NotFound("Stale");
     } else {
-      const unsigned char* bit_value = 
+      const unsigned char* bit_value =
         reinterpret_cast<const unsigned char* >(value.data());
-        int64_t value_length = value.length();
-        if (start_offset < 0) {
-            start_offset = start_offset + value_length;
-        }
-        if (start_offset < 0) {
-            start_offset = 0;
-        }
-        if (end_offset < 0) {
-            end_offset = end_offset + value_length;
-        }
-        // converting to int64_t just avoid warning 
-        if (end_offset > static_cast<int64_t>(value.length()) - 1) {
-            end_offset = value_length - 1;
-        }
-        if (end_offset < 0) {
-            end_offset = 0;
-        }
-        if (start_offset > end_offset) {
-            *ret = -1;
-            return Status::OK();
-        }
-        if (start_offset > value_length - 1) {
-            *ret = -1;
-            return Status::OK();
-        }
-
-        int bytes = end_offset - start_offset + 1;
-        int pos = GetBitPos(bit_value + start_offset, bytes, bit);
-        if (pos == (8 * bytes) && bit == 0)
-            pos = -1;
-        if (pos != -1) {
-            pos = pos + 8 * start_offset;
-        }
-        *ret = pos;
-    } 
+      int64_t value_length = value.length();
+      if (start_offset < 0) {
+        start_offset = start_offset + value_length;
+      }
+      if (start_offset < 0) {
+        start_offset = 0;
+      }
+      if (end_offset < 0) {
+        end_offset = end_offset + value_length;
+      }
+      // converting to int64_t just avoid warning
+      if (end_offset > static_cast<int64_t>(value.length()) - 1) {
+        end_offset = value_length - 1;
+      }
+      if (end_offset < 0) {
+        end_offset = 0;
+      }
+      if (start_offset > end_offset) {
+        *ret = -1;
+        return Status::OK();
+      }
+      if (start_offset > value_length - 1) {
+        *ret = -1;
+        return Status::OK();
+      }
+      int64_t bytes = end_offset - start_offset + 1;
+      int64_t pos = GetBitPos(bit_value + start_offset, bytes, bit);
+      if (pos == (8 * bytes) && bit == 0) {
+        pos = -1;
+      }
+      if (pos != -1) {
+        pos = pos + 8 * start_offset;
+      }
+      *ret = pos;
+    }
   } else {
     return s;
   }
@@ -768,7 +781,8 @@ Status RedisStrings::Incrby(const Slice& key, int64_t value, int64_t* ret) {
   }
 }
 
-Status RedisStrings::Incrbyfloat(const Slice& key, const Slice& value, std::string* ret) {
+Status RedisStrings::Incrbyfloat(const Slice& key, const Slice& value,
+                                 std::string* ret) {
   std::string old_value, new_value;
   long double long_double_by;
   if (StrToLongDouble(value.data(), value.size(), &long_double_by) == -1) {

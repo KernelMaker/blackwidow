@@ -45,11 +45,11 @@ TEST_F(StringsTest, GetTest) {
 TEST_F(StringsTest, GetSetTest) {
   std::string value;
   // If the key did not exist
-  s = db.GetSet("GETSET_KEY","GETSET_VALUE", &value);
+  s = db.GetSet("GETSET_KEY", "GETSET_VALUE", &value);
   ASSERT_TRUE(s.ok());
   ASSERT_STREQ(value.c_str(), "");
 
-  s = db.GetSet("GETSET_KEY","GETSET_VALUE", &value);
+  s = db.GetSet("GETSET_KEY", "GETSET_VALUE", &value);
   ASSERT_TRUE(s.ok());
   ASSERT_STREQ(value.c_str(), "GETSET_VALUE");
 }
@@ -204,7 +204,7 @@ TEST_F(StringsTest, GetrangeTest) {
   s = db.Getrange("GETRANGE_KEY", 0, -1, &value);
   ASSERT_TRUE(s.ok());
   ASSERT_STREQ(value.c_str(), "This is a string");
-  
+
   s = db.Getrange("GETRANGE_KEY", 10, 100, &value);
   ASSERT_TRUE(s.ok());
   ASSERT_STREQ(value.c_str(), "string");
@@ -263,23 +263,26 @@ TEST_F(StringsTest, BitOpTest) {
   s = db.Set("BITOP_KEY3", "BLACKWIDOW");
   ASSERT_TRUE(s.ok());
   std::vector<std::string> src_keys {"BITOP_KEY1", "BITOP_KEY2", "BITOP_KEY3"};
-  
+
   // AND
-  s = db.BitOp(BlackWidow::BitOpType::kBitOpAnd, "BITOP_DESTKEY", src_keys, &ret);
+  s = db.BitOp(BlackWidow::BitOpType::kBitOpAnd,
+               "BITOP_DESTKEY", src_keys, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(ret, 10);
   s = db.Get("BITOP_DESTKEY", &value);
   ASSERT_STREQ(value.c_str(), "@@A@AB\x00\x00\x00\x00");
- 
-  // OR 
-  s = db.BitOp(BlackWidow::BitOpType::kBitOpOr, "BITOP_DESTKEY", src_keys, &ret);
+
+  // OR
+  s = db.BitOp(BlackWidow::BitOpType::kBitOpOr,
+               "BITOP_DESTKEY", src_keys, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(ret, 10);
   s = db.Get("BITOP_DESTKEY", &value);
   ASSERT_STREQ(value.c_str(), "GOOGOWIDOW");
-  
+
   // XOR
-  s = db.BitOp(BlackWidow::BitOpType::kBitOpXor, "BITOP_DESTKEY", src_keys, &ret);
+  s = db.BitOp(BlackWidow::BitOpType::kBitOpXor,
+               "BITOP_DESTKEY", src_keys, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(ret, 10);
   s = db.Get("BITOP_DESTKEY", &value);
@@ -287,12 +290,44 @@ TEST_F(StringsTest, BitOpTest) {
 
   // NOT
   std::vector<std::string> not_keys {"BITOP_KEY1"};
-  s = db.BitOp(BlackWidow::BitOpType::kBitOpNot, "BITOP_DESTKEY", not_keys, &ret);
+  s = db.BitOp(BlackWidow::BitOpType::kBitOpNot,
+               "BITOP_DESTKEY", not_keys, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(ret, 6);
   s = db.Get("BITOP_DESTKEY", &value);
   ASSERT_STREQ(value.c_str(), "\xb9\xb0\xb0\xbd\xbe\xad");
+}
 
+// BitPos
+TEST_F(StringsTest, BitPosTest) {
+  // bitpos key bit
+  int64_t ret;
+  s = db.Set("BITPOS_KEY", "\xff\xf0\x00");
+  ASSERT_TRUE(s.ok());
+  s = db.BitPos("BITPOS_KEY", 0, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 12);
+
+  // bitpos key bit [start]
+  s = db.Set("BITPOS_KEY", "\xff\x00\x00");
+  ASSERT_TRUE(s.ok());
+  s = db.BitPos("BITPOS_KEY", 1, 0, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 0);
+  s = db.BitPos("BITPOS_KEY", 1, 2, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, -1);
+
+  // bitpos key bit [start] [end]
+  s = db.BitPos("BITPOS_KEY", 1, 0, 4, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 0);
+
+  // bit value is not exists
+  s = db.Set("BITPOS_KEY", "\x00\x00\x00");
+  ASSERT_TRUE(s.ok());
+  s = db.BitPos("BITPOS_KEY", 1, &ret);
+  ASSERT_EQ(ret, -1);
 }
 
 // Decrby
