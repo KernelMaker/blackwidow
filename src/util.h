@@ -7,6 +7,8 @@
 #define SRC_UTIL_H_
 
 #include <string>
+#include <cstring>
+#include <cmath>
 
 namespace blackwidow {
 
@@ -15,6 +17,8 @@ namespace blackwidow {
   int StrToInt64(const char *s, size_t slen, int64_t *value);
   int StringMatch(const char *pattern, int pattern_len, const char *string,
                   int string_len, int nocase);
+  int StrToLongDouble(const char* s, size_t slen, long double* ldval);
+  int LongDoubleToStr(long double ldval, std::string* value);
 }
 
 #endif  //  SRC_UTIL_H_

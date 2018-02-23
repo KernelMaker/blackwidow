@@ -8,12 +8,14 @@
 #include "src/mutex_impl.h"
 #include "src/redis_strings.h"
 #include "src/redis_hashes.h"
+#include "src/redis_setes.h"
 
 namespace blackwidow {
 
 BlackWidow::BlackWidow() :
   strings_db_(nullptr),
   hashes_db_(nullptr),
+  setes_db_(nullptr),
   mutex_factory_(new MutexFactoryImpl) {
   cursors_store_.max_size_ = 5000;
   cursors_mutex_ = mutex_factory_->AllocateMutex();
@@ -22,6 +24,7 @@ BlackWidow::BlackWidow() :
 BlackWidow::~BlackWidow() {
   delete strings_db_;
   delete hashes_db_;
+  delete setes_db_;
 }
 
 Status BlackWidow::Compact() {
@@ -47,6 +50,8 @@ Status BlackWidow::Open(const rocksdb::Options& options,
   Status s = strings_db_->Open(options, AppendSubDirectory(db_path, "strings"));
   hashes_db_ = new RedisHashes();
   s = hashes_db_->Open(options, AppendSubDirectory(db_path, "hashes"));
+  setes_db_ = new RedisSetes();
+  s = setes_db_->Open(options, AppendSubDirectory(db_path, "setes"));
   return s;
 }
 
@@ -157,6 +162,16 @@ Status BlackWidow::HGetall(const Slice& key,
   return hashes_db_->HGetall(key, fvs);
 }
 
+Status BlackWidow::HKeys(const Slice& key,
+                         std::vector<std::string>* fields) {
+  return hashes_db_->HKeys(key, fields);
+}
+
+Status BlackWidow::HVals(const Slice& key,
+                         std::vector<std::string>* values) {
+  return hashes_db_->HVals(key, values);
+}
+
 Status BlackWidow::HSetnx(const Slice& key, const Slice& field,
                           const Slice& value, int32_t* ret) {
   return hashes_db_->HSetnx(key, field, value, ret);
@@ -179,10 +194,27 @@ Status BlackWidow::HIncrby(const Slice& key, const Slice& field, int64_t value,
   return hashes_db_->HIncrby(key, field, value, ret);
 }
 
+Status BlackWidow::HIncrbyfloat(const Slice& key, const Slice& field,
+                                const Slice& by, std::string* new_value) {
+  return hashes_db_->HIncrbyfloat(key, field, by, new_value);
+}
+
 Status BlackWidow::HDel(const Slice& key,
                         const std::vector<std::string>& fields,
                         int32_t* ret) {
   return hashes_db_->HDel(key, fields, ret);
+}
+
+// Setes Commands
+Status BlackWidow::SAdd(const Slice& key,
+                        const std::vector<std::string>& members,
+                        int32_t* ret) {
+  return setes_db_->SAdd(key, members, ret);
+}
+
+Status BlackWidow::SCard(const Slice& key,
+                         int32_t* ret) {
+  return setes_db_->SCard(key, ret);
 }
 
 // Keys Commands
@@ -198,7 +230,7 @@ int32_t BlackWidow::Expire(const Slice& key, int32_t ttl,
   } else if (!s.IsNotFound()) {
     is_corruption = true;
   }
-  (*type_status)[DataType::STRINGS] = s;
+  (*type_status)[DataType::kStrings] = s;
 
   // Hash
   s = hashes_db_->Expire(key, ttl);
@@ -207,7 +239,16 @@ int32_t BlackWidow::Expire(const Slice& key, int32_t ttl,
   } else if (!s.IsNotFound()) {
     is_corruption = true;
   }
-  (*type_status)[DataType::HASHES] = s;
+  (*type_status)[DataType::kHashes] = s;
+
+  // Setes
+  s = setes_db_->Expire(key, ttl);
+  if (s.ok()) {
+    ret++;
+  } else if (!s.IsNotFound()) {
+    is_corruption = true;
+  }
+  (*type_status)[DataType::kSetes] = s;
 
   if (is_corruption) {
     return -1;
@@ -230,7 +271,7 @@ int64_t BlackWidow::Del(const std::vector<Slice>& keys,
     } else if (!s.IsNotFound()) {
       is_corruption = true;
     }
-    (*type_status)[DataType::STRINGS] = s;
+    (*type_status)[DataType::kStrings] = s;
 
     // Hashes
     s = hashes_db_->Del(key);
@@ -239,7 +280,16 @@ int64_t BlackWidow::Del(const std::vector<Slice>& keys,
     } else if (!s.IsNotFound()) {
       is_corruption = true;
     }
-    (*type_status)[DataType::HASHES] = s;
+    (*type_status)[DataType::kHashes] = s;
+
+    // Setes
+    s = setes_db_->Del(key);
+    if (s.ok()) {
+      is_success = true;
+    } else if (!s.IsNotFound()) {
+      is_corruption = true;
+    }
+    (*type_status)[DataType::kSetes] = s;
 
     if (is_success) {
       count++;
