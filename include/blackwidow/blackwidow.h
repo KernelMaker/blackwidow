@@ -116,10 +116,10 @@ class BlackWidow {
   // Return the position of the first bit set to 1 or 0 in a string
   // BitPos key 0
   Status BitPos(const Slice& key, int32_t bit, int64_t* ret);
-  // BitPos key 0 start
+  // BitPos key 0 [start]
   Status BitPos(const Slice& key, int32_t bit,
                 int64_t start_offset, int64_t* ret);
-  // BitPos key 0 start end
+  // BitPos key 0 [start] [end]
   Status BitPos(const Slice& key, int32_t bit,
                 int64_t start_offset, int64_t end_offset,
                 int64_t* ret);

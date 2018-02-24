@@ -327,6 +327,22 @@ TEST_F(StringsTest, BitPosTest) {
   s = db.Set("BITPOS_KEY", "\x00\x00\x00");
   ASSERT_TRUE(s.ok());
   s = db.BitPos("BITPOS_KEY", 1, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, -1);
+
+  // the offset is beyond the range
+  s = db.Set("BITPOS_KEY", "\xff\xff\xff");
+  ASSERT_TRUE(s.ok());
+  s = db.BitPos("BITPOS_KEY", 0, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, -1);
+
+  s = db.BitPos("BITPOS_KEY", 0, 0, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, -1);
+
+  s = db.BitPos("BITPOS_KEY", 0, 0, -1, &ret);
+  ASSERT_TRUE(s.ok());
   ASSERT_EQ(ret, -1);
 }
 

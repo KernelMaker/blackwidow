@@ -435,7 +435,7 @@ Status RedisStrings::BitCount(const Slice& key,
 std::string BitOpOperate(BlackWidow::BitOpType op,
                          const std::vector<std::string> &src_values,
                          int64_t max_len) {
-  char *dest_value = new char[max_len];
+  char* dest_value = new char[max_len];
 
   char byte, output;
   for (int64_t j = 0; j < max_len; j++) {
@@ -539,7 +539,7 @@ int32_t GetBitPos(const unsigned char* s, unsigned int bytes, int bit) {
     pos = pos + 8 * sizeof(*l);
   }
   unsigned char * c = reinterpret_cast<unsigned char *>(l);
-  for (unsigned int j = 0; j < sizeof(*l); j++) {
+  for (size_t j = 0; j < sizeof(*l); j++) {
     word = word << 8;
     if (bytes) {
       word = word | *c;
@@ -579,6 +579,7 @@ Status RedisStrings::BitPos(const Slice& key, int32_t bit,
       }
       return Status::NotFound("Stale");
     } else {
+      parsed_strings_value.StripSuffix();
       const unsigned char* bit_value =
         reinterpret_cast<const unsigned char* >(value.data());
       int64_t value_length = value.length();
@@ -586,6 +587,9 @@ Status RedisStrings::BitPos(const Slice& key, int32_t bit,
       int64_t end_offset = std::max(value_length - 1, static_cast<int64_t>(0));
       int64_t bytes = end_offset - start_offset + 1;
       int64_t pos = GetBitPos(bit_value + start_offset, bytes, bit);
+      if (pos == (8 * bytes) && bit == 0) {
+        pos = -1;
+      }
       if (pos != -1) {
         pos = pos + 8 * start_offset;
       }
@@ -612,6 +616,7 @@ Status RedisStrings::BitPos(const Slice& key, int32_t bit,
       }
       return Status::NotFound("Stale");
     } else {
+      parsed_strings_value.StripSuffix();
       const unsigned char* bit_value =
         reinterpret_cast<const unsigned char* >(value.data());
       int64_t value_length = value.length();
@@ -632,6 +637,9 @@ Status RedisStrings::BitPos(const Slice& key, int32_t bit,
       }
       int64_t bytes = end_offset - start_offset + 1;
       int64_t pos = GetBitPos(bit_value + start_offset, bytes, bit);
+      if (pos == (8 * bytes) && bit == 0) {
+        pos = -1;
+      }
       if (pos != -1) {
         pos = pos + 8 * start_offset;
       }
@@ -659,6 +667,7 @@ Status RedisStrings::BitPos(const Slice& key, int32_t bit,
       }
       return Status::NotFound("Stale");
     } else {
+      parsed_strings_value.StripSuffix();
       const unsigned char* bit_value =
         reinterpret_cast<const unsigned char* >(value.data());
       int64_t value_length = value.length();
@@ -758,7 +767,7 @@ Status RedisStrings::Incrby(const Slice& key, int64_t value, int64_t* ret) {
       char* end = nullptr;
       int64_t ival = strtoll(old_value.c_str(), &end, 10);
       if (*end != 0) {
-        return Status::InvalidArgument("value is not a integer");
+        return Status::InvalidArgument("Value is not a integer");
       }
       if ((value >= 0 && LLONG_MAX - value < ival) ||
           (value < 0 && LLONG_MIN - value > ival)) {
