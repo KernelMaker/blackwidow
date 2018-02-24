@@ -296,6 +296,10 @@ TEST_F(StringsTest, BitOpTest) {
   ASSERT_EQ(ret, 6);
   s = db.Get("BITOP_DESTKEY", &value);
   ASSERT_STREQ(value.c_str(), "\xb9\xb0\xb0\xbd\xbe\xad");
+  // NOT operation more than two parameters
+  s = db.BitOp(BlackWidow::BitOpType::kBitOpNot,
+               "BITOP_DESTKEY", src_keys, &ret);
+  ASSERT_TRUE(s.IsInvalidArgument());
 }
 
 // BitPos
@@ -330,7 +334,6 @@ TEST_F(StringsTest, BitPosTest) {
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(ret, -1);
 
-  // the offset is beyond the range
   s = db.Set("BITPOS_KEY", "\xff\xff\xff");
   ASSERT_TRUE(s.ok());
   s = db.BitPos("BITPOS_KEY", 0, &ret);
@@ -342,6 +345,11 @@ TEST_F(StringsTest, BitPosTest) {
   ASSERT_EQ(ret, -1);
 
   s = db.BitPos("BITPOS_KEY", 0, 0, -1, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, -1);
+
+  // the offset is beyond the range
+  s = db.BitPos("BITPOS_KEY", 0, 4, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(ret, -1);
 }
@@ -399,6 +407,12 @@ TEST_F(StringsTest, IncrbyfloatTest) {
   s = db.Incrbyfloat("INCRBYFLOAT_KEY", "-5", &value);
   ASSERT_TRUE(s.ok());
   ASSERT_STREQ(value.c_str(), "5.6");
+
+  // If the key contains a string that can not be represented as integer
+  s = db.Set("INCRBYFLOAT_KEY", "INCRBY_VALUE");
+  ASSERT_TRUE(s.ok());
+  s = db.Incrbyfloat("INCRBYFLOAT_KEY", "5", &value);
+  ASSERT_TRUE(s.IsInvalidArgument());
 }
 
 // Setex

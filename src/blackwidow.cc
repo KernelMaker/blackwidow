@@ -92,22 +92,22 @@ Status BlackWidow::MSetnx(const std::vector<BlackWidow::KeyValue>& kvs,
   return strings_db_->MSetnx(kvs, ret);
 }
 
-Status BlackWidow::Setrange(const Slice& key, int32_t offset,
+Status BlackWidow::Setrange(const Slice& key, int64_t start_offset,
                             const Slice& value, int32_t* ret) {
-  return strings_db_->Setrange(key, offset, value, ret);
+  return strings_db_->Setrange(key, start_offset, value, ret);
 }
 
-Status BlackWidow::Getrange(const Slice& key, int64_t start, int64_t end,
-                            std::string* ret) {
-  return strings_db_->Getrange(key, start, end, ret);
+Status BlackWidow::Getrange(const Slice& key, int64_t start_offset,
+                            int64_t end_offset, std::string* ret) {
+  return strings_db_->Getrange(key, start_offset, end_offset, ret);
 }
 
 Status BlackWidow::Append(const Slice& key, const Slice& value, int32_t* ret) {
   return strings_db_->Append(key, value, ret);
 }
 
-Status BlackWidow::BitCount(const Slice& key, int32_t start_offset,
-                            int32_t end_offset, int32_t *ret, bool have_range) {
+Status BlackWidow::BitCount(const Slice& key, int64_t start_offset,
+                            int64_t end_offset, int32_t *ret, bool have_range) {
   return strings_db_->BitCount(key, start_offset, end_offset, ret, have_range);
 }
 

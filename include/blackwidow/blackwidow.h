@@ -89,12 +89,12 @@ class BlackWidow {
 
   // Set key to hold string value if key does not exist
   // return the length of the string after it was modified by the command
-  Status Setrange(const Slice& key, int32_t offset,
+  Status Setrange(const Slice& key, int64_t start_offset,
                   const Slice& value, int32_t* ret);
 
   // Returns the substring of the string value stored at key,
   // determined by the offsets start and end (both are inclusive)
-  Status Getrange(const Slice& key, int64_t start, int64_t end,
+  Status Getrange(const Slice& key, int64_t start_offset, int64_t end_offset,
                   std::string* ret);
 
   // If key already exists and is a string, this command appends the value at
@@ -105,8 +105,8 @@ class BlackWidow {
   // Count the number of set bits (population counting) in a string.
   // return the number of bits set to 1
   // note: if need to specified offset, set have_range to true
-  Status BitCount(const Slice& key, int32_t start_offset, int32_t end_offset,
-                  int32_t* ret, bool have_range);
+  Status BitCount(const Slice& key, int64_t start_offset, int64_t end_offset,
+                  int32_t* ret, bool have_offset);
 
   // Perform a bitwise operation between multiple keys
   // and store the result in the destination key

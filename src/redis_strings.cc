@@ -252,11 +252,11 @@ Status RedisStrings::MSetnx(const std::vector<BlackWidow::KeyValue>& kvs,
   return s;
 }
 
-Status RedisStrings::Setrange(const Slice& key, int32_t offset,
+Status RedisStrings::Setrange(const Slice& key, int64_t start_offset,
                               const Slice& value, int32_t* ret) {
   std::string old_value;
   std::string new_value;
-  if (offset < 0) {
+  if (start_offset < 0) {
     return Status::InvalidArgument("offset < 0");
   }
 
@@ -266,18 +266,18 @@ Status RedisStrings::Setrange(const Slice& key, int32_t offset,
     ParsedStringsValue parsed_strings_value(&old_value);
     parsed_strings_value.StripSuffix();
     if (parsed_strings_value.IsStale()) {
-      std::string tmp(offset, '\0');
+      std::string tmp(start_offset, '\0');
       new_value = tmp.append(value.data());
       *ret = new_value.length();
     } else {
-      if (static_cast<size_t>(offset) > old_value.length()) {
-        old_value.resize(offset);
+      if (static_cast<size_t>(start_offset) > old_value.length()) {
+        old_value.resize(start_offset);
         new_value = old_value.append(value.data());
       } else {
-        std::string head = old_value.substr(0, offset);
+        std::string head = old_value.substr(0, start_offset);
         std::string tail;
-        if (offset + value.size() - 1 < old_value.length() - 1) {
-          tail = old_value.substr(offset + value.size());
+        if (start_offset + value.size() - 1 < old_value.length() - 1) {
+          tail = old_value.substr(start_offset + value.size());
         }
         new_value = head + value.data() + tail;
       }
@@ -286,7 +286,7 @@ Status RedisStrings::Setrange(const Slice& key, int32_t offset,
     StringsValue strings_value(new_value);
     return db_->Put(default_write_options_, key, strings_value.Encode());
   } else if (s.IsNotFound()) {
-    std::string tmp(offset, '\0');
+    std::string tmp(start_offset, '\0');
     new_value = tmp.append(value.data());
     *ret = new_value.length();
     StringsValue strings_value(new_value);
@@ -295,7 +295,8 @@ Status RedisStrings::Setrange(const Slice& key, int32_t offset,
   return s;
 }
 
-Status RedisStrings::Getrange(const Slice& key, int64_t start, int64_t end,
+Status RedisStrings::Getrange(const Slice& key,
+                              int64_t start_offset, int64_t end_offset,
                               std::string* ret) {
   *ret = "";
   std::string value;
@@ -307,8 +308,8 @@ Status RedisStrings::Getrange(const Slice& key, int64_t start, int64_t end,
     } else {
       parsed_strings_value.StripSuffix();
       int64_t size = value.size();
-      int64_t start_t = start >= 0 ? start : size + start;
-      int64_t end_t = end >= 0 ? end : size + end;
+      int64_t start_t = start_offset >= 0 ? start_offset : size + start_offset;
+      int64_t end_t = end_offset >= 0 ? end_offset : size + end_offset;
       if (start_t > size - 1 ||
           (start_t != 0 && start_t > end_t) ||
           (start_t != 0 && end_t < 0)
@@ -385,7 +386,7 @@ int GetBitCount(const unsigned char* value, int64_t bytes) {
 }
 
 Status RedisStrings::BitCount(const Slice& key,
-                              int32_t start_offset, int32_t end_offset,
+                              int64_t start_offset, int64_t end_offset,
                               int32_t* ret, bool have_range) {
   *ret = 0;
   std::string value;

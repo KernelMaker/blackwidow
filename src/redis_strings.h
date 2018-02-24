@@ -31,12 +31,12 @@ class RedisStrings : public Redis {
               std::vector<std::string>* values);
   Status Setnx(const Slice& key, const Slice& value, int32_t* ret);
   Status MSetnx(const std::vector<BlackWidow::KeyValue>& kvs, int32_t* ret);
-  Status Setrange(const Slice& key, int32_t offset,
+  Status Setrange(const Slice& key, int64_t start_offset,
                   const Slice& value, int32_t* ret);
-  Status Getrange(const Slice& key, int64_t start, int64_t end,
+  Status Getrange(const Slice& key, int64_t start_offset, int64_t end_offset,
                   std::string* ret);
   Status Append(const Slice& key, const Slice& value, int32_t* ret);
-  Status BitCount(const Slice& key, int32_t start_offset, int32_t end_offset,
+  Status BitCount(const Slice& key, int64_t start_offset, int64_t end_offset,
                   int32_t* ret, bool have_offset);
   Status BitOp(BlackWidow::BitOpType op, const std::string& dest_key,
                const std::vector<std::string>& src_keys, int64_t* ret);
