@@ -274,6 +274,10 @@ class BlackWidow {
     kSetes
   };
 
+  // Note:
+  // While any error happens, you need to check type_status for
+  // the error message
+
   // Set a timeout on key
   // return -1 operation exception errors happen in database
   // return >=0 success

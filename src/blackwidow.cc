@@ -284,8 +284,8 @@ int32_t BlackWidow::Expire(const Slice& key, int32_t ttl,
     ret++;
   } else if (!s.IsNotFound()) {
     is_corruption = true;
+    (*type_status)[DataType::kStrings] = s;
   }
-  (*type_status)[DataType::kStrings] = s;
 
   // Hash
   s = hashes_db_->Expire(key, ttl);
@@ -293,8 +293,8 @@ int32_t BlackWidow::Expire(const Slice& key, int32_t ttl,
     ret++;
   } else if (!s.IsNotFound()) {
     is_corruption = true;
+    (*type_status)[DataType::kHashes] = s;
   }
-  (*type_status)[DataType::kHashes] = s;
 
   // Setes
   s = setes_db_->Expire(key, ttl);
@@ -302,8 +302,8 @@ int32_t BlackWidow::Expire(const Slice& key, int32_t ttl,
     ret++;
   } else if (!s.IsNotFound()) {
     is_corruption = true;
+    (*type_status)[DataType::kSetes] = s;
   }
-  (*type_status)[DataType::kSetes] = s;
 
   if (is_corruption) {
     return -1;
