@@ -63,8 +63,7 @@ dbg: $(OBJECTS)
 
 test: $(OBJECTS)
 	@rm -rf db
-	@rm -rf hash_meta_db
-	@mkdir -p db/keys db/strings db/hashes db/setes
+	@mkdir -p db/keys db/strings db/hashes db/hash_meta db/setes
 	@./gtest_keys
 	@./gtest_strings
 	@./gtest_hashes
