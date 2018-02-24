@@ -54,7 +54,7 @@ Status RedisStrings::MSet(const std::vector<BlackWidow::KeyValue>& kvs) {
   }
 
   for (const auto& kv : tmp_kvs) {
-    cur_key = kv.key.ToString();
+    cur_key = kv.key;
     if (pre_key != cur_key) {
       lock_mgr_->TryLock(cur_key);
       pre_key = cur_key;
@@ -75,7 +75,7 @@ Status RedisStrings::MSet(const std::vector<BlackWidow::KeyValue>& kvs) {
   }
 
   for (const auto& kv : tmp_kvs) {
-    cur_key = kv.key.ToString();
+    cur_key = kv.key;
     if (pre_key != cur_key) {
       lock_mgr_->UnLock(cur_key);
       pre_key = cur_key;
@@ -84,7 +84,7 @@ Status RedisStrings::MSet(const std::vector<BlackWidow::KeyValue>& kvs) {
   return s;
 }
 
-Status RedisStrings::MGet(const std::vector<Slice>& keys,
+Status RedisStrings::MGet(const std::vector<std::string>& keys,
                           std::vector<std::string>* values) {
   Status s;
   std::string value;

@@ -25,12 +25,25 @@ class RedisHashes : public Redis {
       int32_t* res);
   Status HGet(const Slice& key, const Slice& field, std::string* value);
   Status HMSet(const Slice& key, const std::vector<BlackWidow::FieldValue>& fvs);
-  Status HMGet(const Slice& key, const std::vector<Slice>& fields,
+  Status HMGet(const Slice& key, const std::vector<std::string>& fields,
                std::vector<std::string>* values);
+  Status HGetall(const Slice& key,
+                 std::vector<BlackWidow::FieldValue>* fvs);
+  Status HKeys(const Slice& key,
+               std::vector<std::string>* fields);
+  Status HVals(const Slice& key,
+               std::vector<std::string>* values);
+  Status HSetnx(const Slice& key, const Slice& field, const Slice& value,
+                int32_t* ret);
   Status HLen(const Slice& key, int32_t* ret);
+  Status HStrlen(const Slice& key, const Slice& field, int32_t* len);
   Status HExists(const Slice& key, const Slice& field);
   Status HIncrby(const Slice& key, const Slice& field, int64_t value,
                  int64_t* ret);
+  Status HIncrbyfloat(const Slice& key, const Slice& field,
+                      const Slice& by, std::string* new_value);
+  Status HDel(const Slice& key, const std::vector<std::string>& fields,
+              int32_t* ret);
 
   // Common Commands
   virtual Status Open(const rocksdb::Options& options,
