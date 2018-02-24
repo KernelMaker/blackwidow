@@ -281,7 +281,7 @@ int64_t BlackWidow::Exists(const std::vector<Slice>& keys,
       count++;
     } else if (!s.IsNotFound()) {
       is_corruption = true;
-      (*type_status)[DataType::STRINGS] = s;
+      (*type_status)[DataType::kStrings] = s;
     }
 
     s = hashes_db_->HLen(key, &len);
@@ -289,8 +289,9 @@ int64_t BlackWidow::Exists(const std::vector<Slice>& keys,
       count++;
     } else if (!s.IsNotFound()) {
       is_corruption = true;
-      (*type_status)[DataType::HASHES] = s;
+      (*type_status)[DataType::kHashes] = s;
     }
+    // TODO(shq) other types
   }
 
   if (is_corruption) {

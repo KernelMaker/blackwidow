@@ -257,6 +257,21 @@ TEST_F(StringsTest, DelTest) {
   ASSERT_EQ(ret, 1);
 }
 
+// Exists
+TEST_F(StringsTest, ExistsTest) {
+  int32_t ret;
+  std::map<BlackWidow::DataType, Status> type_status;
+  std::vector<Slice> keys {"EXISTS_KEY"};
+  s = db.Set("EXISTS_KEY", "EXISTS_VALUE");
+  ASSERT_TRUE(s.ok());
+  s = db.HSet("EXISTS_KEY", "EXISTS_FIELD", "EXISTS_VALUE", &ret);
+  ASSERT_TRUE(s.ok());
+  // TODO (shq) other types
+  ret = db.Exists(keys, &type_status);
+  ASSERT_EQ(ret, 2);
+
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
