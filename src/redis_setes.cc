@@ -94,7 +94,8 @@ Status RedisSetes::SAdd(const Slice& key,
       version = parsed_setes_meta_value.version();
       for (const auto& member : filtered_members) {
         SetesMemberKey setes_member_key(key, version, member);
-        s = db_->Get(read_options, handles_[1], setes_member_key.Encode(), &member_value);
+        s = db_->Get(read_options, handles_[1],
+                setes_member_key.Encode(), &member_value);
         if (s.ok()) {
           cnt++;
         } else if (s.IsNotFound()) {
@@ -161,7 +162,8 @@ Status RedisSetes::SIsmember(const Slice& key, const Slice& member,
       std::string member_value;
       version = parsed_setes_meta_value.version();
       SetesMemberKey setes_member_key(key, version, member);
-      s = db_->Get(read_options, handles_[1], setes_member_key.Encode(), &member_value);
+      s = db_->Get(read_options, handles_[1],
+              setes_member_key.Encode(), &member_value);
       *ret = s.ok() ? 1 : 0;
     }
   } else if (s.IsNotFound()) {
