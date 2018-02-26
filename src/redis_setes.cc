@@ -141,6 +141,66 @@ Status RedisSetes::SCard(const Slice& key, int32_t* ret) {
   return s;
 }
 
+Status RedisSetes::SIsmember(const Slice& key, const Slice& member,
+                             int32_t* ret) {
+  rocksdb::ReadOptions read_options;
+  const rocksdb::Snapshot* snapshot;
+
+  std::string meta_value;
+  int32_t version = 0;
+  ScopeRecordLock l(lock_mgr_, key);
+  ScopeSnapshot ss(db_, &snapshot);
+  read_options.snapshot = snapshot;
+  Status s = db_->Get(read_options, handles_[0], key, &meta_value);
+  if (s.ok()) {
+    ParsedSetesMetaValue parsed_setes_meta_value(&meta_value);
+    if (parsed_setes_meta_value.IsStale()) {
+      *ret = 0;
+      return Status::NotFound("Stale");
+    } else {
+      std::string member_value;
+      version = parsed_setes_meta_value.version();
+      SetesMemberKey setes_member_key(key, version, member);
+      s = db_->Get(read_options, handles_[1], setes_member_key.Encode(), &member_value);
+      *ret = s.ok() ? 1 : 0;
+    }
+  } else if (s.IsNotFound()) {
+    *ret = 0;
+  }
+  return s;
+}
+
+Status RedisSetes::SMembers(const Slice& key,
+                            std::vector<std::string>* members) {
+  rocksdb::ReadOptions read_options;
+  const rocksdb::Snapshot* snapshot;
+
+  std::string meta_value;
+  int32_t version = 0;
+  ScopeRecordLock l(lock_mgr_, key);
+  ScopeSnapshot ss(db_, &snapshot);
+  read_options.snapshot = snapshot;
+  Status s = db_->Get(read_options, handles_[0], key, &meta_value);
+  if (s.ok()) {
+    ParsedSetesMetaValue parsed_setes_meta_value(&meta_value);
+    if (parsed_setes_meta_value.IsStale()) {
+      return Status::NotFound("Stale");
+    } else {
+      version = parsed_setes_meta_value.version();
+      SetesMemberKey setes_member_key(key, version, "");
+      Slice prefix = setes_member_key.Encode();
+      auto iter = db_->NewIterator(read_options, handles_[1]);
+      for (iter->Seek(prefix);
+           iter->Valid() && iter->key().starts_with(prefix);
+           iter->Next()) {
+        ParsedSetesMemberKey parsed_setes_member_key(iter->key());
+        members->push_back(parsed_setes_member_key.member().ToString());
+      }
+    }
+  }
+  return s;
+}
+
 Status RedisSetes::Expire(const Slice& key, int32_t ttl) {
   std::string meta_value;
   ScopeRecordLock l(lock_mgr_, key);

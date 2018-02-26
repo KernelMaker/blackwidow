@@ -264,6 +264,13 @@ class BlackWidow {
   // Returns the set cardinality (number of elements) of the set stored at key.
   Status SCard(const Slice& key, int32_t* ret);
 
+  // Returns if member is a member of the set stored at key.
+  Status SIsmember(const Slice& key, const Slice& member,
+                   int32_t* ret);
+
+  // Returns all the members of the set value stored at key.
+  // This has the same effect as running SINTER with one argument key.
+  Status SMembers(const Slice& key, std::vector<std::string>* members);
 
   // Keys Commands
   enum DataType {

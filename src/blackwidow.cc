@@ -272,6 +272,16 @@ Status BlackWidow::SCard(const Slice& key,
   return setes_db_->SCard(key, ret);
 }
 
+Status BlackWidow::SIsmember(const Slice& key, const Slice& member,
+                             int32_t* ret) {
+  return setes_db_->SIsmember(key, member, ret);
+}
+
+Status BlackWidow::SMembers(const Slice& key,
+                            std::vector<std::string>* members) {
+  return setes_db_->SMembers(key, members);
+}
+
 // Keys Commands
 int32_t BlackWidow::Expire(const Slice& key, int32_t ttl,
                            std::map<DataType, Status>* type_status) {

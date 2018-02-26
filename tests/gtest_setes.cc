@@ -98,6 +98,106 @@ TEST_F(SetesTest, SCardTest) {
   ASSERT_EQ(ret, 3);
 }
 
+// SIsmember
+TEST_F(SetesTest, SIsmemberTest) {
+  int32_t ret = 0;
+  std::vector<std::string> members {"MEMBER"};
+  s = db.SAdd("SISMEMBER_KEY", members, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 1);
+
+  // Not exist set key
+  s = db.SIsmember("SISMEMBER_NOT_EXIST_KEY", "MEMBER", &ret);
+  ASSERT_TRUE(s.IsNotFound());
+  ASSERT_EQ(ret, 0);
+
+  // Not exist set member
+  s = db.SIsmember("SISMEMBER_KEY", "NOT_EXIST_MEMBER", &ret);
+  ASSERT_TRUE(s.IsNotFound());
+  ASSERT_EQ(ret, 0);
+
+  s = db.SIsmember("SISMEMBER_KEY", "MEMBER", &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 1);
+
+  // Expire set key
+  std::map<BlackWidow::DataType, rocksdb::Status> type_status;
+  db.Expire("SISMEMBER_KEY", 1, &type_status);
+  ASSERT_TRUE(type_status[BlackWidow::DataType::kSetes].ok());
+  std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+  s = db.SIsmember("SISMEMBER_KEY", "MEMBER", &ret);
+  ASSERT_TRUE(s.IsNotFound());
+  ASSERT_EQ(ret, 0);
+}
+
+// SMembers
+TEST_F(SetesTest, SMembersTest) {
+  int32_t ret = 0;
+  std::vector<std::string> mid_members_in;
+  mid_members_in.push_back("MID_MEMBER1");
+  mid_members_in.push_back("MID_MEMBER2");
+  mid_members_in.push_back("MID_MEMBER3");
+  s = db.SAdd("B_SMEMBERS_KEY", mid_members_in, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 3);
+
+  std::vector<std::string> members_out;
+  s = db.SMembers("B_SMEMBERS_KEY", &members_out);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(members_out.size(), 3);
+  ASSERT_EQ(members_out[0], "MID_MEMBER1");
+  ASSERT_EQ(members_out[1], "MID_MEMBER2");
+  ASSERT_EQ(members_out[2], "MID_MEMBER3");
+
+  // Insert some kv who's position above "mid kv"
+  std::vector<std::string> pre_members_in;
+  pre_members_in.push_back("PRE_MEMBER1");
+  pre_members_in.push_back("PRE_MEMBER2");
+  pre_members_in.push_back("PRE_MEMBER3");
+  s = db.SAdd("A_SMEMBERS_KEY", pre_members_in, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 3);
+  members_out.clear();
+  s = db.SMembers("B_SMEMBERS_KEY", &members_out);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(members_out.size(), 3);
+  ASSERT_EQ(members_out[0], "MID_MEMBER1");
+  ASSERT_EQ(members_out[1], "MID_MEMBER2");
+  ASSERT_EQ(members_out[2], "MID_MEMBER3");
+
+  // Insert some kv who's position below "mid kv"
+  std::vector<std::string> suf_members_in;
+  suf_members_in.push_back("SUF_MEMBER1");
+  suf_members_in.push_back("SUF_MEMBER2");
+  suf_members_in.push_back("SUF_MEMBER3");
+  s = db.SAdd("C_SMEMBERS_KEY", suf_members_in, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 3);
+  members_out.clear();
+  s = db.SMembers("B_SMEMBERS_KEY", &members_out);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(members_out.size(), 3);
+  ASSERT_EQ(members_out[0], "MID_MEMBER1");
+  ASSERT_EQ(members_out[1], "MID_MEMBER2");
+  ASSERT_EQ(members_out[2], "MID_MEMBER3");
+
+  // SMembers timeout setes
+  members_out.clear();
+  std::map<BlackWidow::DataType, rocksdb::Status> type_status;
+  db.Expire("B_SMEMBERS_KEY", 1, &type_status);
+  ASSERT_TRUE(type_status[BlackWidow::DataType::kSetes].ok());
+  std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+  s = db.SMembers("B_SMEMBERS_KEY", &members_out);
+  ASSERT_TRUE(s.IsNotFound());
+  ASSERT_EQ(members_out.size(), 0);
+
+  // SMembers not exist setes
+  members_out.clear();
+  s = db.SMembers("SMEMBERS_NOT_EXIST_KEY", &members_out);
+  ASSERT_TRUE(s.IsNotFound());
+  ASSERT_EQ(members_out.size(), 0);
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
