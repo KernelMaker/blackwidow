@@ -24,6 +24,11 @@ class RedisSetes : public Redis {
   Status SAdd(const Slice& key,
               const std::vector<std::string>& members, int32_t* ret);
   Status SCard(const Slice& key, int32_t* ret);
+  Status SDiff(const std::vector<std::string>& keys,
+               std::vector<std::string>* members);
+  Status SDiffstore(const Slice& destination,
+                    const std::vector<std::string>& keys,
+                    int32_t* ret);
   Status SIsmember(const Slice& key, const Slice& member,
                    int32_t* ret);
   Status SMembers(const Slice& key,
