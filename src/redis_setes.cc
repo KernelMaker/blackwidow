@@ -188,9 +188,9 @@ Status RedisSetes::SMembers(const Slice& key,
     if (parsed_setes_meta_value.IsStale()) {
       return Status::NotFound("Stale");
     } else {
+      std::string prefix;
       version = parsed_setes_meta_value.version();
-      SetesMemberKey setes_member_key(key, version, "");
-      Slice prefix = setes_member_key.Encode();
+      SetesMemberKey::EncodePrefix(key, version, &prefix);
       auto iter = db_->NewIterator(read_options, handles_[1]);
       for (iter->Seek(prefix);
            iter->Valid() && iter->key().starts_with(prefix);

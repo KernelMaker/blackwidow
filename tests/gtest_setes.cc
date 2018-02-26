@@ -145,9 +145,9 @@ TEST_F(SetesTest, SMembersTest) {
   s = db.SMembers("B_SMEMBERS_KEY", &members_out);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(members_out.size(), 3);
-  ASSERT_EQ(members_out[0], "MID_MEMBER1");
-  ASSERT_EQ(members_out[1], "MID_MEMBER2");
-  ASSERT_EQ(members_out[2], "MID_MEMBER3");
+  ASSERT_TRUE(find(members_out.begin(), members_out.end(), "MID_MEMBER1") != members_out.end());
+  ASSERT_TRUE(find(members_out.begin(), members_out.end(), "MID_MEMBER2") != members_out.end());
+  ASSERT_TRUE(find(members_out.begin(), members_out.end(), "MID_MEMBER3") != members_out.end());
 
   // Insert some kv who's position above "mid kv"
   std::vector<std::string> pre_members_in;
@@ -161,9 +161,9 @@ TEST_F(SetesTest, SMembersTest) {
   s = db.SMembers("B_SMEMBERS_KEY", &members_out);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(members_out.size(), 3);
-  ASSERT_EQ(members_out[0], "MID_MEMBER1");
-  ASSERT_EQ(members_out[1], "MID_MEMBER2");
-  ASSERT_EQ(members_out[2], "MID_MEMBER3");
+  ASSERT_TRUE(find(members_out.begin(), members_out.end(), "MID_MEMBER1") != members_out.end());
+  ASSERT_TRUE(find(members_out.begin(), members_out.end(), "MID_MEMBER2") != members_out.end());
+  ASSERT_TRUE(find(members_out.begin(), members_out.end(), "MID_MEMBER3") != members_out.end());
 
   // Insert some kv who's position below "mid kv"
   std::vector<std::string> suf_members_in;
@@ -177,9 +177,9 @@ TEST_F(SetesTest, SMembersTest) {
   s = db.SMembers("B_SMEMBERS_KEY", &members_out);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(members_out.size(), 3);
-  ASSERT_EQ(members_out[0], "MID_MEMBER1");
-  ASSERT_EQ(members_out[1], "MID_MEMBER2");
-  ASSERT_EQ(members_out[2], "MID_MEMBER3");
+  ASSERT_TRUE(find(members_out.begin(), members_out.end(), "MID_MEMBER1") != members_out.end());
+  ASSERT_TRUE(find(members_out.begin(), members_out.end(), "MID_MEMBER2") != members_out.end());
+  ASSERT_TRUE(find(members_out.begin(), members_out.end(), "MID_MEMBER3") != members_out.end());
 
   // SMembers timeout setes
   members_out.clear();
