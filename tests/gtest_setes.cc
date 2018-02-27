@@ -759,6 +759,307 @@ TEST_F(SetesTest, SInterTest) {
   ASSERT_TRUE(find(gp5_members_out.begin(), gp5_members_out.end(), "c") != gp5_members_out.end());
 }
 
+// SInterstore
+TEST_F(SetesTest, SInterstoreTest) {
+  int32_t ret = 0;
+
+  // ***************** Group 1 Test *****************
+  // destination = {}
+  // key1 = {a, b, c, d}
+  // key2 = {a, c}
+  // key3 = {a, c, e}
+  // SINTERSTORE destination key1 key2 key3
+  // destination = {a, c}
+  std::vector<std::string> gp1_members1 {"a", "b", "c", "d"};
+  std::vector<std::string> gp1_members2 {"a", "c"};
+  std::vector<std::string> gp1_members3 {"a", "c", "e"};
+  s = db.SAdd("GP1_SINTERSTORE_KEY1", gp1_members1, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 4);
+  s = db.SAdd("GP1_SINTERSTORE_KEY2", gp1_members2, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 2);
+  s = db.SAdd("GP1_SINTERSTORE_KEY3", gp1_members3, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 3);
+
+  std::vector<std::string> gp1_keys {"GP1_SINTERSTORE_KEY1", "GP1_SINTERSTORE_KEY2", "GP1_SINTERSTORE_KEY3"};
+  std::vector<std::string> gp1_members_out;
+  s = db.SInterstore("GP1_SINTERSTORE_DESTINATION1", gp1_keys, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 2);
+  s = db.SMembers("GP1_SINTERSTORE_DESTINATION1", &gp1_members_out);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(gp1_members_out.size(), 2);
+  ASSERT_TRUE(find(gp1_members_out.begin(), gp1_members_out.end(), "a") != gp1_members_out.end());
+  ASSERT_TRUE(find(gp1_members_out.begin(), gp1_members_out.end(), "c") != gp1_members_out.end());
+  s = db.SCard("GP1_SDIFFSTORE_DESTINATION1", &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 2);
+
+
+  // ***************** Group 2 Test *****************
+  // the destination already exists, it is overwritten.
+  // destination = {a, x, l}
+  // key1 = {a, b, c, d}
+  // key2 = {a, c}
+  // key3 = {a, c, e}
+  // SINTERSTORE destination key1 key2 key3
+  // destination = {a, c}
+  std::vector<std::string> gp2_destination_members {"a", "x", "l"};
+  std::vector<std::string> gp2_members1 {"a", "b", "c", "d"};
+  std::vector<std::string> gp2_members2 {"a", "c"};
+  std::vector<std::string> gp2_members3 {"a", "c", "e"};
+  s = db.SAdd("GP2_SINTERSTORE_DESTINATION1", gp2_destination_members, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 3);
+  s = db.SAdd("GP2_SINTERSTORE_KEY1", gp2_members1, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 4);
+  s = db.SAdd("GP2_SINTERSTORE_KEY2", gp2_members2, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 2);
+  s = db.SAdd("GP2_SINTERSTORE_KEY3", gp2_members3, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 3);
+
+  std::vector<std::string> gp2_keys {"GP2_SINTERSTORE_KEY1", "GP2_SINTERSTORE_KEY2", "GP2_SINTERSTORE_KEY3"};
+  std::vector<std::string> gp2_members_out;
+  s = db.SInterstore("GP2_SINTERSTORE_DESTINATION1", gp2_keys, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 2);
+  s = db.SMembers("GP2_SINTERSTORE_DESTINATION1", &gp2_members_out);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(gp2_members_out.size(), 2);
+  ASSERT_TRUE(find(gp2_members_out.begin(), gp2_members_out.end(), "a") != gp2_members_out.end());
+  ASSERT_TRUE(find(gp2_members_out.begin(), gp2_members_out.end(), "c") != gp2_members_out.end());
+  s = db.SCard("GP2_SINTERSTORE_DESTINATION1", &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 2);
+
+
+  // ***************** Group 3 Test *****************
+  // destination = {}
+  // key1 = {a, b, c, d}
+  // key2 = {a, c}
+  // key3 = {a, c, e}
+  // SINTERSTORE destination key1 key2 key3 not_exist_key
+  // destination = {}
+  std::vector<std::string> gp3_members1 {"a", "b", "c", "d"};
+  std::vector<std::string> gp3_members2 {"a", "c"};
+  std::vector<std::string> gp3_members3 {"a", "c", "e"};
+  s = db.SAdd("GP3_SINTERSTORE_KEY1", gp3_members1, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 4);
+  s = db.SAdd("GP3_SINTERSTORE_KEY2", gp3_members2, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 2);
+  s = db.SAdd("GP3_SINTERSTORE_KEY3", gp3_members3, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 3);
+
+  std::vector<std::string> gp3_keys {"GP3_SINTERSTORE_KEY1", "GP3_SINTERSTORE_KEY2",
+      "GP3_SINTERSTORE_KEY3", "GP3_SINTERSTORE_NOT_EXIST_KEY"};
+  std::vector<std::string> gp3_members_out;
+  s = db.SInterstore("GP3_SINTERSTORE_DESTINATION1", gp3_keys, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 0);
+  s = db.SMembers("GP3_SINTERSTORE_DESTINATION1", &gp3_members_out);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(gp3_members_out.size(), 0);
+  s = db.SCard("GP3_SINTERSTORE_DESTINATION1", &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 0);
+
+
+  // ***************** Group 4 Test *****************
+  // destination = {}
+  // key1 = {a, b, c, d}
+  // key2 = {a, c}          (expire key);
+  // key3 = {a, c, e}
+  // SINTERSTORE destination key1 key2 key3
+  // destination = {}
+  std::vector<std::string> gp4_members1 {"a", "b", "c", "d"};
+  std::vector<std::string> gp4_members2 {"a", "c"};
+  std::vector<std::string> gp4_members3 {"a", "c", "e"};
+  s = db.SAdd("GP4_SINTERSTORE_KEY1", gp4_members1, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 4);
+  s = db.SAdd("GP4_SINTERSTORE_KEY2", gp4_members2, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 2);
+  s = db.SAdd("GP4_SINTERSTORE_KEY3", gp4_members3, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 3);
+
+  std::map<BlackWidow::DataType, rocksdb::Status> gp4_type_status;
+  db.Expire("GP4_SINTERSTORE_KEY2", 1, &gp4_type_status);
+  ASSERT_TRUE(gp4_type_status[BlackWidow::DataType::kSetes].ok());
+  std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+
+  std::vector<std::string> gp4_keys {"GP4_SINTERSTORE_KEY1", "GP4_SINTERSTORE_KEY2", "GP4_SINTERSTORE_KEY3"};
+  std::vector<std::string> gp4_members_out;
+  s = db.SInterstore("GP4_SINTERSTORE_DESTINATION1", gp4_keys, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 0);
+  s = db.SMembers("GP4_SINTERSTORE_DESTINATION1", &gp4_members_out);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(gp4_members_out.size(), 0);
+  s = db.SCard("GP4_SINTERSTORE_DESTINATION1", &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 0);
+
+
+  // ***************** Group 5 Test *****************
+  // destination = {}
+  // key1 = {a, b, c, d}    (expire key);
+  // key2 = {a, c}
+  // key3 = {a, c, e}
+  // SINTERSTORE destination key1 key2 key3
+  // destination = {}
+  std::vector<std::string> gp5_members1 {"a", "b", "c", "d"};
+  std::vector<std::string> gp5_members2 {"a", "c"};
+  std::vector<std::string> gp5_members3 {"a", "c", "e"};
+  s = db.SAdd("GP5_SINTERSTORE_KEY1", gp5_members1, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 4);
+  s = db.SAdd("GP5_SINTERSTORE_KEY2", gp5_members2, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 2);
+  s = db.SAdd("GP5_SINTERSTORE_KEY3", gp5_members3, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 3);
+
+  std::map<BlackWidow::DataType, rocksdb::Status> gp5_type_status;
+  db.Expire("GP5_SINTERSTORE_KEY1", 1, &gp5_type_status);
+  ASSERT_TRUE(gp5_type_status[BlackWidow::DataType::kSetes].ok());
+  std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+
+  std::vector<std::string> gp5_keys {"GP5_SINTERSTORE_KEY1", "GP5_SINTERSTORE_KEY2", "GP5_SINTERSTORE_KEY3"};
+  std::vector<std::string> gp5_members_out;
+  s = db.SInterstore("GP5_SINTERSTORE_DESTINATION1", gp5_keys, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 0);
+  s = db.SMembers("GP5_SINTERSTORE_DESTINATION1", &gp5_members_out);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(gp5_members_out.size(), 0);
+  s = db.SCard("GP5_SINTERSTORE_DESTINATION1", &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 0);
+
+
+  // ***************** Group 6 Test *****************
+  // destination = {}
+  // key1 = {}
+  // key2 = {a, c}
+  // key3 = {a, c, e}
+  // SINTERSTORE destination key1 key2 key3
+  // destination = {}
+  std::vector<std::string> gp6_members1 {"a", "b", "c", "d"};
+  std::vector<std::string> gp6_members2 {"a", "c"};
+  std::vector<std::string> gp6_members3 {"a", "c", "e"};
+  s = db.SAdd("GP6_SINTERSTORE_KEY1", gp6_members1, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 4);
+  s = db.SAdd("GP6_SINTERSTORE_KEY2", gp6_members2, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 2);
+  s = db.SAdd("GP6_SINTERSTORE_KEY3", gp6_members3, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 3);
+
+  s = db.SRem("GP6_SINTERSTORE_KEY1", gp6_members1, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 4);
+  s = db.SCard("GP6_SINTERSTORE_KEY1", &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 0);
+
+  std::vector<std::string> gp6_keys {"GP6_SINTERSTORE_KEY1", "GP6_SINTERSTORE_KEY2", "GP6_SINTERSTORE_KEY3"};
+  std::vector<std::string> gp6_members_out;
+  s = db.SInterstore("GP6_SINTERSTORE_DESTINATION1", gp6_keys, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 0);
+  s = db.SMembers("GP6_SINTERSTORE_DESTINATION1", &gp6_members_out);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(gp4_members_out.size(), 0);
+  s = db.SCard("GP6_SINTERSTORE_DESTINATION1", &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 0);
+
+
+  // ***************** Group 7 Test *****************
+  // destination = {}
+  // key1 = {a, b, c, d}
+  // key2 = {a, c}
+  // key3 = {a, c, e}
+  // SINTERSTORE destination not_exist_key key1 key2 key3
+  // destination = {}
+  std::vector<std::string> gp7_members1 {"a", "b", "c", "d"};
+  std::vector<std::string> gp7_members2 {"a", "c"};
+  std::vector<std::string> gp7_members3 {"a", "c", "e"};
+  s = db.SAdd("GP7_SINTERSTORE_KEY1", gp7_members1, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 4);
+  s = db.SAdd("GP7_SINTERSTORE_KEY2", gp7_members2, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 2);
+  s = db.SAdd("GP7_SINTERSTORE_KEY3", gp7_members3, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 3);
+
+  std::vector<std::string> gp7_keys {"GP7_SINTERSTORE_NOT_EXIST_KEY", "GP7_SINTERSTORE_KEY1",
+      "GP7_SINTERSTORE_KEY2", "GP7_SINTERSTORE_KEY3", };
+  std::vector<std::string> gp7_members_out;
+  s = db.SInterstore("GP7_SINTERSTORE_DESTINATION1", gp7_keys, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 0);
+  s = db.SMembers("GP7_SINTERSTORE_DESTINATION1", &gp7_members_out);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(gp7_members_out.size(), 0);
+  s = db.SCard("GP7_SINTERSTORE_DESTINATION1", &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 0);
+
+
+  // ***************** Group 8 Test *****************
+  // destination = {}
+  // key1 = {a, b, c, d}
+  // key2 = {a, b, c, d}
+  // key3 = {a, b, c, d}
+  // SINTERSTORE destination key1 key2 key3
+  // destination = {a, b, c, d}
+  std::vector<std::string> gp8_members1 {"a", "b", "c", "d"};
+  std::vector<std::string> gp8_members2 {"a", "b", "c", "d"};
+  std::vector<std::string> gp8_members3 {"a", "b", "c", "d"};
+  s = db.SAdd("GP8_SINTERSTORE_KEY1", gp8_members1, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 4);
+  s = db.SAdd("GP8_SINTERSTORE_KEY2", gp8_members2, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 4);
+  s = db.SAdd("GP8_SINTERSTORE_KEY3", gp8_members3, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 4);
+
+  std::vector<std::string> gp8_keys {"GP8_SINTERSTORE_KEY1",
+      "GP8_SINTERSTORE_KEY2", "GP8_SINTERSTORE_KEY3", };
+  std::vector<std::string> gp8_members_out;
+  s = db.SInterstore("GP8_SINTERSTORE_DESTINATION1", gp8_keys, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 4);
+  s = db.SMembers("GP8_SINTERSTORE_DESTINATION1", &gp8_members_out);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(gp8_members_out.size(), 4);
+  ASSERT_TRUE(find(gp8_members_out.begin(), gp8_members_out.end(), "a") != gp8_members_out.end());
+  ASSERT_TRUE(find(gp8_members_out.begin(), gp8_members_out.end(), "b") != gp8_members_out.end());
+  ASSERT_TRUE(find(gp8_members_out.begin(), gp8_members_out.end(), "c") != gp8_members_out.end());
+  ASSERT_TRUE(find(gp8_members_out.begin(), gp8_members_out.end(), "d") != gp8_members_out.end());
+  s = db.SCard("GP8_SINTERSTORE_DESTINATION1", &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 4);
+}
+
 
 // SIsmember
 TEST_F(SetesTest, SIsmemberTest) {
