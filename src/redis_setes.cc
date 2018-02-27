@@ -150,28 +150,12 @@ Status RedisSetes::SDiff(const std::vector<std::string>& keys,
     return Status::Corruption("SDiff invalid parameter, no keys");
   }
 
-  std::string pre_key;
-  std::vector<std::string> tmp_keys(keys);
-  std::sort(tmp_keys.begin(), tmp_keys.end());
-
-  pre_key.clear();
-  if (!tmp_keys.empty() &&
-      tmp_keys[0].empty()) {
-    lock_mgr_->TryLock(pre_key);
-  }
-
-  for (const auto& key : tmp_keys) {
-    if (pre_key != key) {
-      lock_mgr_->TryLock(key);
-      pre_key = key;
-    }
-  }
-
   rocksdb::ReadOptions read_options;
   const rocksdb::Snapshot* snapshot;
 
   std::string meta_value;
   int32_t version = 0;
+  MultiScopeRecordLock ml(lock_mgr_, keys);
   ScopeSnapshot ss(db_, &snapshot);
   read_options.snapshot = snapshot;
   std::vector<BlackWidow::KeyVersion> vaild_setes;
@@ -184,6 +168,8 @@ Status RedisSetes::SDiff(const std::vector<std::string>& keys,
       if (!parsed_setes_meta_value.IsStale()) {
         vaild_setes.push_back({keys[idx], parsed_setes_meta_value.version()});
       }
+    } else if (!s.IsNotFound()) {
+      return s;
     }
   }
 
@@ -211,6 +197,8 @@ Status RedisSetes::SDiff(const std::vector<std::string>& keys,
           if (s.ok()) {
             found = true;
             break;
+          } else if (!s.IsNotFound()) {
+            return s;
           }
         }
         if (!found) {
@@ -218,19 +206,8 @@ Status RedisSetes::SDiff(const std::vector<std::string>& keys,
         }
       }
     }
-  }
-
-  pre_key.clear();
-  if (!tmp_keys.empty() &&
-      tmp_keys[0].empty()) {
-    lock_mgr_->UnLock(pre_key);
-  }
-
-  for (const auto& key : tmp_keys) {
-    if (pre_key != key) {
-      lock_mgr_->UnLock(key);
-      pre_key = key;
-    }
+  } else if (!s.IsNotFound()) {
+    return s;
   }
   return Status::OK();
 }
@@ -242,23 +219,8 @@ Status RedisSetes::SDiffstore(const Slice& destination,
     return Status::Corruption("SDiff invalid parameter, no keys");
   }
 
-  std::string pre_key;
   std::vector<std::string> tmp_keys(keys);
   tmp_keys.push_back(destination.ToString());
-  std::sort(tmp_keys.begin(), tmp_keys.end());
-
-  pre_key.clear();
-  if (!tmp_keys.empty() &&
-      tmp_keys[0].empty()) {
-    lock_mgr_->TryLock(pre_key);
-  }
-
-  for (const auto& key : tmp_keys) {
-    if (pre_key != key) {
-      lock_mgr_->TryLock(key);
-      pre_key = key;
-    }
-  }
 
   rocksdb::WriteBatch batch;
   rocksdb::ReadOptions read_options;
@@ -266,6 +228,7 @@ Status RedisSetes::SDiffstore(const Slice& destination,
 
   std::string meta_value;
   int32_t version = 0;
+  MultiScopeRecordLock ml(lock_mgr_, tmp_keys);
   ScopeSnapshot ss(db_, &snapshot);
   read_options.snapshot = snapshot;
   std::vector<BlackWidow::KeyVersion> vaild_setes;
@@ -278,6 +241,8 @@ Status RedisSetes::SDiffstore(const Slice& destination,
       if (!parsed_setes_meta_value.IsStale()) {
         vaild_setes.push_back({keys[idx], parsed_setes_meta_value.version()});
       }
+    } else if (!s.IsNotFound()) {
+      return s;
     }
   }
 
@@ -306,6 +271,8 @@ Status RedisSetes::SDiffstore(const Slice& destination,
           if (s.ok()) {
             found = true;
             break;
+          } else if (!s.IsNotFound()) {
+            return s;
           }
         }
         if (!found) {
@@ -313,8 +280,7 @@ Status RedisSetes::SDiffstore(const Slice& destination,
         }
       }
     }
-  } else if (s.IsNotFound()) {
-  } else {
+  } else if (!s.IsNotFound()) {
     return s;
   }
 
@@ -339,20 +305,6 @@ Status RedisSetes::SDiffstore(const Slice& destination,
     batch.Put(handles_[1], setes_member_key.Encode(), Slice());
   }
   *ret = members.size();
-
-  // bug
-  pre_key.clear();
-  if (!tmp_keys.empty() &&
-      tmp_keys[0].empty()) {
-    lock_mgr_->UnLock(pre_key);
-  }
-
-  for (const auto& key : tmp_keys) {
-    if (pre_key != key) {
-      lock_mgr_->UnLock(key);
-      pre_key = key;
-    }
-  }
   return db_->Write(default_write_options_, &batch);
 }
 

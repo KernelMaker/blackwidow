@@ -328,6 +328,7 @@ TEST_F(SetesTest, SDiffstoreTest) {
   db.Expire("GP1_SDIFFSTORE_KEY3", 1, &gp1_type_status);
   ASSERT_TRUE(gp1_type_status[BlackWidow::DataType::kSetes].ok());
   std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+
   gp1_members_out.clear();
   s = db.SDiffstore("GP1_SDIFFSTORE_DESTINATION2", gp1_keys, &ret);
   ASSERT_TRUE(s.ok());
@@ -464,7 +465,8 @@ TEST_F(SetesTest, SDiffstoreTest) {
 
 
   // ***************** Group 5 Test *****************
-  // destination = {a, x, l};
+  // the destination already exists, it is overwritten
+  // destination = {a, x, l}
   // key1 = {a, b, c, d}
   // key2 = {c}
   // key3 = {a, c, e}
@@ -503,7 +505,7 @@ TEST_F(SetesTest, SDiffstoreTest) {
 
 
   // ***************** Group 6 Test *****************
-  // test destination equal keys[0] (the destination already exists, it is
+  // test destination equal key1 (the destination already exists, it is
   // overwritten)
   // destination = {a, b, c, d};
   // key2 = {c}
