@@ -355,9 +355,6 @@ class BlackWidow {
   // return -2 if the key does not exist
   // return -1 if the key exists but has not associated expire
   // return > 0 TTL in seconds
-  // Note:
-  // If there is more than one key with the same name,
-  // only one timestamp is returned
   std::map<DataType, int32_t> TTL(const Slice& key,
               std::map<DataType, Status>* type_status);
 
