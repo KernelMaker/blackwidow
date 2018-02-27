@@ -272,6 +272,27 @@ Status BlackWidow::SCard(const Slice& key,
   return setes_db_->SCard(key, ret);
 }
 
+Status BlackWidow::SDiff(const std::vector<std::string>& keys,
+                         std::vector<std::string>* members) {
+  return setes_db_->SDiff(keys, members);
+}
+
+Status BlackWidow::SDiffstore(const Slice& destination,
+                              const std::vector<std::string>& keys,
+                              int32_t* ret) {
+  return setes_db_->SDiffstore(destination, keys, ret);
+}
+
+Status BlackWidow::SIsmember(const Slice& key, const Slice& member,
+                             int32_t* ret) {
+  return setes_db_->SIsmember(key, member, ret);
+}
+
+Status BlackWidow::SMembers(const Slice& key,
+                            std::vector<std::string>* members) {
+  return setes_db_->SMembers(key, members);
+}
+
 // Keys Commands
 int32_t BlackWidow::Expire(const Slice& key, int32_t ttl,
                            std::map<DataType, Status>* type_status) {
@@ -284,8 +305,8 @@ int32_t BlackWidow::Expire(const Slice& key, int32_t ttl,
     ret++;
   } else if (!s.IsNotFound()) {
     is_corruption = true;
+    (*type_status)[DataType::kStrings] = s;
   }
-  (*type_status)[DataType::kStrings] = s;
 
   // Hash
   s = hashes_db_->Expire(key, ttl);
@@ -293,8 +314,8 @@ int32_t BlackWidow::Expire(const Slice& key, int32_t ttl,
     ret++;
   } else if (!s.IsNotFound()) {
     is_corruption = true;
+    (*type_status)[DataType::kHashes] = s;
   }
-  (*type_status)[DataType::kHashes] = s;
 
   // Setes
   s = setes_db_->Expire(key, ttl);
@@ -302,8 +323,8 @@ int32_t BlackWidow::Expire(const Slice& key, int32_t ttl,
     ret++;
   } else if (!s.IsNotFound()) {
     is_corruption = true;
+    (*type_status)[DataType::kSetes] = s;
   }
-  (*type_status)[DataType::kSetes] = s;
 
   if (is_corruption) {
     return -1;
@@ -325,8 +346,8 @@ int64_t BlackWidow::Del(const std::vector<Slice>& keys,
       is_success = true;
     } else if (!s.IsNotFound()) {
       is_corruption = true;
+      (*type_status)[DataType::kHashes] = s;
     }
-    (*type_status)[DataType::kStrings] = s;
 
     // Hashes
     s = hashes_db_->Del(key);
@@ -334,8 +355,8 @@ int64_t BlackWidow::Del(const std::vector<Slice>& keys,
       is_success = true;
     } else if (!s.IsNotFound()) {
       is_corruption = true;
+      (*type_status)[DataType::kSetes] = s;
     }
-    (*type_status)[DataType::kHashes] = s;
 
     // Setes
     s = setes_db_->Del(key);
@@ -343,12 +364,46 @@ int64_t BlackWidow::Del(const std::vector<Slice>& keys,
       is_success = true;
     } else if (!s.IsNotFound()) {
       is_corruption = true;
+      (*type_status)[DataType::kSetes] = s;
     }
-    (*type_status)[DataType::kSetes] = s;
 
     if (is_success) {
       count++;
     }
+  }
+
+  if (is_corruption) {
+    return -1;
+  } else {
+    return count;
+  }
+}
+
+int64_t BlackWidow::Exists(const std::vector<Slice>& keys,
+                       std::map<DataType, Status>* type_status) {
+  int64_t count = 0;
+  int32_t len;
+  std::string value;
+  Status s;
+  bool is_corruption = false;
+
+  for (const auto& key : keys) {
+    s = strings_db_->Get(key, &value);
+    if (s.ok()) {
+      count++;
+    } else if (!s.IsNotFound()) {
+      is_corruption = true;
+      (*type_status)[DataType::kStrings] = s;
+    }
+
+    s = hashes_db_->HLen(key, &len);
+    if (s.ok()) {
+      count++;
+    } else if (!s.IsNotFound()) {
+      is_corruption = true;
+      (*type_status)[DataType::kHashes] = s;
+    }
+    // TODO(shq) other types
   }
 
   if (is_corruption) {
