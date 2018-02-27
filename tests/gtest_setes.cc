@@ -136,6 +136,7 @@ TEST_F(SetesTest, SDiffTest) {
   db.Expire("GP1_SDIFF_KEY3", 1, &gp1_type_status);
   ASSERT_TRUE(gp1_type_status[BlackWidow::DataType::kSetes].ok());
   std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+
   gp1_members_out.clear();
   s = db.SDiff(gp1_keys, &gp1_members_out);
   ASSERT_TRUE(s.ok());
@@ -148,7 +149,7 @@ TEST_F(SetesTest, SDiffTest) {
   // key2 = {c}
   // key3 = {a, c, e}       (expire key)
   // key4 = {}              (not exist key)
-  // SDIFF key1 key2 key3  = {a, b, d}
+  // SDIFF key1 key2 key3 key4 = {a, b, d}
   gp1_keys.push_back("GP1_SDIFF_KEY4");
   gp1_members_out.clear();
   s = db.SDiff(gp1_keys, &gp1_members_out);
@@ -586,6 +587,179 @@ TEST_F(SetesTest, SDiffstoreTest) {
   ASSERT_EQ(ret, 2);
 }
 
+// SInter
+TEST_F(SetesTest, SInterTest) {
+  int32_t ret = 0;
+
+  // ***************** Group 1 Test *****************
+  // key1 = {a, b, c, d}
+  // key2 = {a, c}
+  // key3 = {a, c, e}
+  // SINTER key1 key2 key3  = {a, c}
+  std::vector<std::string> gp1_members1 {"a", "b", "c", "d"};
+  std::vector<std::string> gp1_members2 {"a", "c"};
+  std::vector<std::string> gp1_members3 {"a", "c", "e"};
+  s = db.SAdd("GP1_SINTER_KEY1", gp1_members1, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 4);
+  s = db.SAdd("GP1_SINTER_KEY2", gp1_members2, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 2);
+  s = db.SAdd("GP1_SINTER_KEY3", gp1_members3, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 3);
+
+  std::vector<std::string> gp1_keys {"GP1_SINTER_KEY1", "GP1_SINTER_KEY2", "GP1_SINTER_KEY3"};
+  std::vector<std::string> gp1_members_out;
+  s = db.SInter(gp1_keys, &gp1_members_out);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(gp1_members_out.size(), 2);
+  ASSERT_TRUE(find(gp1_members_out.begin(), gp1_members_out.end(), "a") != gp1_members_out.end());
+  ASSERT_TRUE(find(gp1_members_out.begin(), gp1_members_out.end(), "c") != gp1_members_out.end());
+
+  // key1 = {a, b, c, d}
+  // key2 = {a, c}
+  // key3 = {a, c, e}       (expire)
+  // SINTER key1 key2 key3  = {}
+  std::map<BlackWidow::DataType, rocksdb::Status> gp1_type_status;
+  db.Expire("GP1_SINTER_KEY3", 1, &gp1_type_status);
+  ASSERT_TRUE(gp1_type_status[BlackWidow::DataType::kSetes].ok());
+  std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+
+  gp1_members_out.clear();
+  s = db.SInter(gp1_keys, &gp1_members_out);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(gp1_members_out.size(), 0);
+
+
+  // ***************** Group 2 Test *****************
+  // key1 = {a, b, c, d}
+  // key2 = {c}
+  // key3 = {a, c, e}
+  // SINTER key1 key2 key3 not_exist_key = {}
+  std::vector<std::string> gp2_members1 {"a", "b", "c", "d"};
+  std::vector<std::string> gp2_members2 {"c"};
+  std::vector<std::string> gp2_members3 {"a", "c", "e"};
+  s = db.SAdd("GP2_SINTER_KEY1", gp2_members1, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 4);
+  s = db.SAdd("GP2_SINTER_KEY2", gp2_members2, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 1);
+  s = db.SAdd("GP2_SINTER_KEY3", gp2_members3, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 3);
+
+  std::vector<std::string> gp2_keys {"GP2_SINTER_KEY1", "GP2_SINTER_KEY2", "GP2_SINTER_KEY3", "NOT_EXIST_KEY"};
+  std::vector<std::string> gp2_members_out;
+  s = db.SInter(gp2_keys, &gp2_members_out);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(gp2_members_out.size(), 0);
+
+
+  // ***************** Group 3 Test *****************
+  // key1 = {a, b, c, d}
+  // key2 = {a, c}
+  // key3 = {}
+  // SINTER key1 key2 key3 = {}
+  std::vector<std::string> gp3_members1 {"a", "b", "c", "d"};
+  std::vector<std::string> gp3_members2 {"a", "c"};
+  std::vector<std::string> gp3_members3 {"a", "b", "c"};
+  s = db.SAdd("GP3_SINTER_KEY1", gp3_members1, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 4);
+  s = db.SAdd("GP3_SINTER_KEY2", gp3_members2, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 2);
+  s = db.SAdd("GP3_SINTER_KEY3", gp3_members3, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 3);
+
+  s = db.SRem("GP3_SINTER_KEY3", gp3_members3, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 3);
+  s = db.SCard("GP3_SINTER_KEY3", &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 0);
+  std::vector<std::string> gp3_members_out;
+  s = db.SMembers("GP3_SINTER_KEY3", &gp3_members_out);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(gp3_members_out.size(), 0);
+
+  gp3_members_out.clear();
+  std::vector<std::string> gp3_keys {"GP3_SINTER_KEY1", "GP3_SINTER_KEY2", "GP3_SINTER_KEY3"};
+  s = db.SInter(gp3_keys, &gp3_members_out);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(gp3_members_out.size(), 0);
+
+
+  // ***************** Group 4 Test *****************
+  // key1 = {}
+  // key2 = {a, c}
+  // key3 = {a, b, c, d}
+  // SINTER key1 key2 key3 = {}
+  std::vector<std::string> gp4_members1 {"a", "b", "c", "d"};
+  std::vector<std::string> gp4_members2 {"a", "c"};
+  std::vector<std::string> gp4_members3 {"a", "b", "c", "d"};
+  s = db.SAdd("GP4_SINTER_KEY1", gp4_members1, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 4);
+  s = db.SAdd("GP4_SINTER_KEY2", gp4_members2, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 2);
+  s = db.SAdd("GP4_SINTER_KEY3", gp4_members3, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 4);
+
+  s = db.SRem("GP4_SINTER_KEY1", gp4_members1, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 4);
+  s = db.SCard("GP4_SINTER_KEY1", &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 0);
+  std::vector<std::string> gp4_members_out;
+  s = db.SMembers("GP4_SINTER_KEY1", &gp4_members_out);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(gp4_members_out.size(), 0);
+
+  gp4_members_out.clear();
+  std::vector<std::string> gp4_keys {"GP4_SINTER_KEY1", "GP4_SINTER_KEY2", "GP4_SINTER_KEY3"};
+  s = db.SInter(gp4_keys, &gp4_members_out);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(gp4_members_out.size(), 0);
+
+
+  // ***************** Group 5 Test *****************
+  // key1 = {a, b, c, d}
+  // key2 = {a, c}
+  // key3 = {a, b, c}
+  // SINTER key1 key2 key2 key3 = {a, c}
+  std::vector<std::string> gp5_members1 {"a", "b", "c", "d"};
+  std::vector<std::string> gp5_members2 {"a", "c"};
+  std::vector<std::string> gp5_members3 {"a", "b", "c"};
+  s = db.SAdd("GP5_SINTER_KEY1", gp5_members1, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 4);
+  s = db.SAdd("GP5_SINTER_KEY2", gp5_members2, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 2);
+  s = db.SAdd("GP5_SINTER_KEY3", gp5_members3, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 3);
+
+  std::vector<std::string> gp5_members_out;
+  std::vector<std::string> gp5_keys {"GP5_SINTER_KEY1", "GP5_SINTER_KEY2","GP5_SINTER_KEY2", "GP5_SINTER_KEY3"};
+  s = db.SInter(gp5_keys, &gp5_members_out);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(gp5_members_out.size(), 2);
+  gp5_members_out.clear();
+  s = db.SMembers("GP5_SINTER_KEY1", &gp5_members_out);
+  ASSERT_TRUE(s.ok());
+  ASSERT_TRUE(find(gp5_members_out.begin(), gp5_members_out.end(), "a") != gp5_members_out.end());
+  ASSERT_TRUE(find(gp5_members_out.begin(), gp5_members_out.end(), "c") != gp5_members_out.end());
+}
+
+
 // SIsmember
 TEST_F(SetesTest, SIsmemberTest) {
   int32_t ret = 0;
@@ -684,6 +858,90 @@ TEST_F(SetesTest, SMembersTest) {
   s = db.SMembers("SMEMBERS_NOT_EXIST_KEY", &members_out);
   ASSERT_TRUE(s.IsNotFound());
   ASSERT_EQ(members_out.size(), 0);
+}
+
+// SRem
+TEST_F(SetesTest, SRemTest) {
+  int32_t ret = 0;
+
+  // ***************** Group 1 Test *****************
+  std::vector<std::string> gp1_members {"a", "b", "c", "d"};
+  s = db.SAdd("GP1_SREM_KEY", gp1_members, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 4);
+
+  std::vector<std::string> gp1_del_members {"a", "b"};
+  s = db.SRem("GP1_SREM_KEY", gp1_del_members, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 2);
+
+  std::vector<std::string> gp1_members_out;
+  s = db.SMembers("GP1_SREM_KEY", &gp1_members_out);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(gp1_members_out.size(), 2);
+  ASSERT_TRUE(find(gp1_members_out.begin(), gp1_members_out.end(), "c") != gp1_members_out.end());
+  ASSERT_TRUE(find(gp1_members_out.begin(), gp1_members_out.end(), "d") != gp1_members_out.end());
+
+  s = db.SCard("GP1_SREM_KEY", &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 2);
+
+
+  // ***************** Group 2 Test *****************
+  // srem not exist members
+  std::vector<std::string> gp2_members {"a", "b", "c", "d"};
+  s = db.SAdd("GP2_SREM_KEY", gp2_members, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 4);
+
+  std::vector<std::string> gp2_del_members {"e", "f"};
+  s = db.SRem("GP2_SREM_KEY", gp2_del_members, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 0);
+
+  std::vector<std::string> gp2_members_out;
+  s = db.SMembers("GP2_SREM_KEY", &gp2_members_out);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(gp2_members_out.size(), 4);
+  ASSERT_TRUE(find(gp2_members_out.begin(), gp2_members_out.end(), "a") != gp2_members_out.end());
+  ASSERT_TRUE(find(gp2_members_out.begin(), gp2_members_out.end(), "b") != gp2_members_out.end());
+  ASSERT_TRUE(find(gp2_members_out.begin(), gp2_members_out.end(), "c") != gp2_members_out.end());
+  ASSERT_TRUE(find(gp2_members_out.begin(), gp2_members_out.end(), "d") != gp2_members_out.end());
+
+  s = db.SCard("GP2_SREM_KEY", &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 4);
+
+
+  // ***************** Group 3 Test *****************
+  // srem not exist key
+  std::vector<std::string> gp3_del_members{"a", "b", "c"};
+  s = db.SRem("GP3_NOT_EXIST_KEY", gp3_del_members, &ret);
+  ASSERT_TRUE(s.IsNotFound());
+  ASSERT_EQ(ret, 0);
+
+
+  // ***************** Group 4 Test *****************
+  // srem timeout key
+  std::vector<std::string> gp4_members {"a", "b", "c", "d"};
+  s = db.SAdd("GP4_SREM_KEY", gp4_members, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 4);
+
+  std::map<BlackWidow::DataType, rocksdb::Status> gp4_type_status;
+  db.Expire("GP4_SREM_KEY", 1, &gp4_type_status);
+  ASSERT_TRUE(gp4_type_status[BlackWidow::DataType::kSetes].ok());
+  std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+
+  std::vector<std::string> gp4_del_members {"a", "b"};
+  s = db.SRem("GP4_SREM_KEY", gp4_del_members, &ret);
+  ASSERT_TRUE(s.IsNotFound());
+  ASSERT_EQ(ret, 0);
+
+  std::vector<std::string> gp4_members_out;
+  s = db.SMembers("GP4_SREM_KEY", &gp4_members_out);
+  ASSERT_TRUE(s.IsNotFound());
+  ASSERT_EQ(gp4_members_out.size(), 0);
 }
 
 int main(int argc, char** argv) {
