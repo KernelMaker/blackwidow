@@ -99,7 +99,7 @@ TEST_F(KeysTest, ScanTest) {
   for (; ;) {
     keys.clear();
     cursor_origin = cursor_ret;
-    cursor_ret = db.Scan(cursor_ret, "SCAN*", 3, &keys); 
+    cursor_ret = db.Scan(cursor_ret, "SCAN*", 3, &keys);
     if (cursor_ret != 0) {
       ASSERT_EQ(cursor_ret, cursor_origin + 3);
     } else {
@@ -110,7 +110,7 @@ TEST_F(KeysTest, ScanTest) {
   // Repeat scan the same parameters should return the same result
   for (int32_t i = 0; i < 10; i++) {
     keys.clear();
-    cursor_ret = db.Scan(3, "SCAN*", 7, &keys); 
+    cursor_ret = db.Scan(3, "SCAN*", 7, &keys);
     ASSERT_EQ(keys.size(), 5);
     ASSERT_EQ(cursor_ret, 10);
   }
@@ -171,6 +171,104 @@ TEST_F(KeysTest, DelTest) {
     }
   }
   ASSERT_EQ(ret, 1);
+}
+
+// Expireat
+TEST_F(KeysTest, ExpireatTest) {
+  // If the key does not exist
+  std::map<BlackWidow::DataType, Status> type_status;
+  int32_t ret = db.Expireat("EXPIREAT_KEY", 0, &type_status);
+  ASSERT_EQ(ret, 0);
+
+  // Strings
+  std::string value;
+  s = db.Set("EXPIREAT_KEY", "EXPIREAT_VALUE");
+  ASSERT_TRUE(s.ok());
+  // Hashes
+  s = db.HSet("EXPIREAT_KEY", "EXPIREAT_FIELD", "EXPIREAT_VALUE", &ret);
+  // TODO(shq) other types
+
+  int64_t unix_time;
+  rocksdb::Env::Default()->GetCurrentTime(&unix_time);
+  int32_t timestamp = static_cast<int32_t>(unix_time) + 1;
+  ret = db.Expireat("EXPIREAT_KEY", timestamp, &type_status);
+  ASSERT_EQ(ret, 2);
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+  s = db.Get("EXPIREAT_KEY", &value);
+  ASSERT_TRUE(s.IsNotFound());
+  s = db.HGet("EXPIREAT_KEY", "EXPIREAT_FIELD", &value);
+  ASSERT_TRUE(s.IsNotFound());
+}
+
+// Persist
+TEST_F(KeysTest, PersistTest) {
+  // If the key does not exist
+  std::map<BlackWidow::DataType, Status> type_status;
+  int32_t ret = db.Persist("EXPIREAT_KEY", &type_status);
+  ASSERT_EQ(ret, 0);
+
+  // If the key does not have an associated timeout
+  // Strings
+  std::string value;
+  s = db.Set("PERSIST_KEY", "PERSIST_VALUE");
+  ASSERT_TRUE(s.ok());
+  // Hashes
+  s = db.HSet("PERSIST_KEY", "PERSIST_FIELD", "PERSIST_VALUE", &ret);
+  ASSERT_TRUE(s.ok());
+  // TODO(shq) other types
+  ret = db.Persist("PERSIST_KEY", &type_status);
+  ASSERT_EQ(ret, 0);
+
+  // If the timeout was set
+  ret = db.Expire("PERSIST_KEY", 1000, &type_status);
+  ASSERT_EQ(ret, 2);
+  ret = db.Persist("PERSIST_KEY", &type_status);
+  ASSERT_EQ(ret, 2);
+
+  std::map<BlackWidow::DataType, int32_t> ttl_ret;
+  ttl_ret = db.TTL("PERSIST_KEY", &type_status);
+  ASSERT_EQ(ttl_ret.size(), 2);
+  for (auto it = ttl_ret.begin(); it != ttl_ret.end(); it++) {
+    ASSERT_EQ(it->second, -1);
+  }
+}
+
+// TTL
+TEST_F(KeysTest, TTLTest) {
+  // If the key does not exist
+  std::map<BlackWidow::DataType, Status> type_status;
+  std::map<BlackWidow::DataType, int32_t> ttl_ret;
+  ttl_ret = db.TTL("TTL_KEY", &type_status);
+  ASSERT_EQ(ttl_ret.size(), 2);
+  for (auto it = ttl_ret.begin(); it != ttl_ret.end(); it++) {
+    ASSERT_EQ(it->second, -2);
+  }
+
+  // If the key does not have an associated timeout
+  // Strings
+  std::string value;
+  int32_t ret;
+  s = db.Set("TTL_KEY", "TTL_VALUE");
+  ASSERT_TRUE(s.ok());
+  // Hashes
+  s = db.HSet("TTL_KEY", "TTL_FIELD", "TTL_VALUE", &ret);
+  ASSERT_TRUE(s.ok());
+  // TODO(shq) other types
+  ttl_ret = db.TTL("TTL_KEY", &type_status);
+  ASSERT_EQ(ttl_ret.size(), 2);
+  for (auto it = ttl_ret.begin(); it != ttl_ret.end(); it++) {
+    ASSERT_EQ(it->second, -1);
+  }
+
+  // If the timeout was set
+  ret = db.Expire("TTL_KEY", 1000, &type_status);
+  ASSERT_EQ(ret, 2);
+  ttl_ret = db.TTL("TTL_KEY", &type_status);
+  ASSERT_EQ(ttl_ret.size(), 2);
+  for (auto it = ttl_ret.begin(); it != ttl_ret.end(); it++) {
+    ASSERT_GT(it->second, 0);
+  }
 }
 
 int main(int argc, char** argv) {
