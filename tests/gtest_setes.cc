@@ -1326,6 +1326,172 @@ TEST_F(SetesTest, SRemTest) {
   ASSERT_EQ(gp4_members_out.size(), 0);
 }
 
+// SUnion
+TEST_F(SetesTest, SUnionTest) {
+  int32_t ret = 0;
+
+  // ***************** Group 1 Test *****************
+  // key1 = {a, b, c, d}
+  // key2 = {a, c}
+  // key3 = {a, c, e}
+  // SUnion key1 key2 key3  = {a, b, c, d, e}
+  std::vector<std::string> gp1_members1 {"a", "b", "c", "d"};
+  std::vector<std::string> gp1_members2 {"a", "c"};
+  std::vector<std::string> gp1_members3 {"a", "c", "e"};
+  s = db.SAdd("GP1_SUNION_KEY1", gp1_members1, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 4);
+  s = db.SAdd("GP1_SUNION_KEY2", gp1_members2, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 2);
+  s = db.SAdd("GP1_SUNION_KEY3", gp1_members3, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 3);
+
+  std::vector<std::string> gp1_keys {"GP1_SUNION_KEY1",
+      "GP1_SUNION_KEY2", "GP1_SUNION_KEY3"};
+  std::vector<std::string> gp1_members_out;
+  s = db.SUnion(gp1_keys, &gp1_members_out);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(gp1_members_out.size(), 5);
+  ASSERT_TRUE(find(gp1_members_out.begin(),
+              gp1_members_out.end(), "a") != gp1_members_out.end());
+  ASSERT_TRUE(find(gp1_members_out.begin(),
+              gp1_members_out.end(), "b") != gp1_members_out.end());
+  ASSERT_TRUE(find(gp1_members_out.begin(),
+              gp1_members_out.end(), "c") != gp1_members_out.end());
+  ASSERT_TRUE(find(gp1_members_out.begin(),
+              gp1_members_out.end(), "d") != gp1_members_out.end());
+  ASSERT_TRUE(find(gp1_members_out.begin(),
+              gp1_members_out.end(), "e") != gp1_members_out.end());
+
+  // key1 = {a, b, c, d}
+  // key2 = {a, c}
+  // key3 = {a, c, e}          (expire key);
+  // SUnion key1 key2 key3  = {a, b, c, d}
+  std::map<BlackWidow::DataType, rocksdb::Status> gp1_type_status;
+  db.Expire("GP1_SUNION_KEY3", 1, &gp1_type_status);
+  ASSERT_TRUE(gp1_type_status[BlackWidow::DataType::kSetes].ok());
+  std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+  gp1_members_out.clear();
+
+  s = db.SUnion(gp1_keys, &gp1_members_out);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(gp1_members_out.size(), 4);
+  ASSERT_TRUE(find(gp1_members_out.begin(),
+              gp1_members_out.end(), "a") != gp1_members_out.end());
+  ASSERT_TRUE(find(gp1_members_out.begin(),
+              gp1_members_out.end(), "b") != gp1_members_out.end());
+  ASSERT_TRUE(find(gp1_members_out.begin(),
+              gp1_members_out.end(), "c") != gp1_members_out.end());
+  ASSERT_TRUE(find(gp1_members_out.begin(),
+              gp1_members_out.end(), "d") != gp1_members_out.end());
+
+
+  // ***************** Group 2 Test *****************
+  // key1 = {a, b, c, d}
+  // key2 = {a, c}
+  // key3 = {a, c, e}
+  // SUnion key1 key2 key3 not_exist_key = {a, b, c, d, e}
+  std::vector<std::string> gp2_members1 {"a", "b", "c", "d"};
+  std::vector<std::string> gp2_members2 {"a", "c"};
+  std::vector<std::string> gp2_members3 {"a", "c", "e"};
+  s = db.SAdd("GP2_SUNION_KEY1", gp2_members1, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 4);
+  s = db.SAdd("GP2_SUNION_KEY2", gp2_members2, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 2);
+  s = db.SAdd("GP2_SUNION_KEY3", gp2_members3, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 3);
+
+  std::vector<std::string> gp2_keys {"GP2_SUNION_KEY1",
+      "GP2_SUNION_KEY2", "GP2_SUNION_KEY3", "GP2_NOT_EXIST_KEY"};
+  std::vector<std::string> gp2_members_out;
+  s = db.SUnion(gp2_keys, &gp2_members_out);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(gp2_members_out.size(), 5);
+  ASSERT_TRUE(find(gp2_members_out.begin(),
+              gp2_members_out.end(), "a") != gp2_members_out.end());
+  ASSERT_TRUE(find(gp2_members_out.begin(),
+              gp2_members_out.end(), "b") != gp2_members_out.end());
+  ASSERT_TRUE(find(gp2_members_out.begin(),
+              gp2_members_out.end(), "c") != gp2_members_out.end());
+  ASSERT_TRUE(find(gp2_members_out.begin(),
+              gp2_members_out.end(), "d") != gp2_members_out.end());
+  ASSERT_TRUE(find(gp2_members_out.begin(),
+              gp2_members_out.end(), "e") != gp2_members_out.end());
+
+
+  // ***************** Group 3 Test *****************
+  // key1 = {a, b, c, d}
+  // key2 = {a, c}
+  // key3 = {}
+  // SUnion key1 key2 key3 = {a, b, c, d}
+  std::vector<std::string> gp3_members1 {"a", "b", "c", "d"};
+  std::vector<std::string> gp3_members2 {"a", "c"};
+  std::vector<std::string> gp3_members3 {"a", "c", "e", "f", "g"};
+  s = db.SAdd("GP3_SUNION_KEY1", gp3_members1, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 4);
+  s = db.SAdd("GP3_SUNION_KEY2", gp3_members2, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 2);
+  s = db.SAdd("GP3_SUNION_KEY3", gp3_members3, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 5);
+
+  s = db.SRem("GP3_SUNION_KEY3", gp3_members3, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 5);
+  s = db.SCard("GP3_SUNION_KEY3", &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 0);
+  std::vector<std::string> gp3_members_out;
+  s = db.SMembers("GP3_SUNION_KEY3", &gp3_members_out);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(gp3_members_out.size(), 0);
+
+  std::vector<std::string> gp3_keys {"GP3_SUNION_KEY1",
+      "GP3_SUNION_KEY2", "GP3_SUNION_KEY3"};
+  gp3_members_out.clear();
+  s = db.SUnion(gp3_keys, &gp3_members_out);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(gp3_members_out.size(), 4);
+  ASSERT_TRUE(find(gp3_members_out.begin(),
+              gp3_members_out.end(), "a") != gp3_members_out.end());
+  ASSERT_TRUE(find(gp3_members_out.begin(),
+              gp3_members_out.end(), "b") != gp3_members_out.end());
+  ASSERT_TRUE(find(gp3_members_out.begin(),
+              gp3_members_out.end(), "c") != gp3_members_out.end());
+  ASSERT_TRUE(find(gp3_members_out.begin(),
+              gp3_members_out.end(), "d") != gp3_members_out.end());
+
+
+  // ***************** Group 4 Test *****************
+  // key1 = {a, b, c, d}
+  // SUnion key1 = {a, b, c, d}
+  std::vector<std::string> gp4_members1 {"a", "b", "c", "d"};
+  s = db.SAdd("GP4_SUNION_KEY1", gp4_members1, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 4);
+
+  std::vector<std::string> gp4_keys {"GP4_SUNION_KEY1"};
+  std::vector<std::string> gp4_members_out;
+  s = db.SUnion(gp4_keys, &gp4_members_out);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(gp4_members_out.size(), 4);
+  ASSERT_TRUE(find(gp4_members_out.begin(),
+              gp4_members_out.end(), "a") != gp4_members_out.end());
+  ASSERT_TRUE(find(gp4_members_out.begin(),
+              gp4_members_out.end(), "b") != gp4_members_out.end());
+  ASSERT_TRUE(find(gp4_members_out.begin(),
+              gp4_members_out.end(), "c") != gp4_members_out.end());
+  ASSERT_TRUE(find(gp4_members_out.begin(),
+              gp4_members_out.end(), "d") != gp4_members_out.end());
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

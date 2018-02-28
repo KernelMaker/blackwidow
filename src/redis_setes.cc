@@ -5,6 +5,7 @@
 
 #include "src/redis_setes.h"
 
+#include <map>
 #include <memory>
 #include <algorithm>
 
@@ -145,7 +146,6 @@ Status RedisSetes::SCard(const Slice& key, int32_t* ret) {
 
 Status RedisSetes::SDiff(const std::vector<std::string>& keys,
                          std::vector<std::string>* members) {
-
   if (keys.size() <= 0) {
     return Status::Corruption("SDiff invalid parameter, no keys");
   }
@@ -610,6 +610,59 @@ Status RedisSetes::SRem(const Slice& key,
     return s;
   }
   return db_->Write(default_write_options_, &batch);
+}
+
+Status RedisSetes::SUnion(const std::vector<std::string>& keys,
+                          std::vector<std::string>* members) {
+  if (keys.size() <= 0) {
+    return Status::Corruption("SUnion invalid parameter, no keys");
+  }
+
+  rocksdb::ReadOptions read_options;
+  const rocksdb::Snapshot* snapshot;
+
+  std::string meta_value;
+  MultiScopeRecordLock ml(lock_mgr_, keys);
+  ScopeSnapshot ss(db_, &snapshot);
+  read_options.snapshot = snapshot;
+  std::vector<BlackWidow::KeyVersion> vaild_setes;
+  Status s;
+
+  for (uint32_t idx = 0; idx < keys.size(); ++idx) {
+    s = db_->Get(read_options, handles_[0], keys[idx], &meta_value);
+    if (s.ok()) {
+      ParsedSetesMetaValue parsed_setes_meta_value(&meta_value);
+      if (!parsed_setes_meta_value.IsStale() &&
+        parsed_setes_meta_value.count() != 0) {
+        vaild_setes.push_back({keys[idx], parsed_setes_meta_value.version()});
+      }
+    } else if (!s.IsNotFound()) {
+      return s;
+    }
+  }
+
+  std::string prefix;
+  std::map<std::string, bool> result_flag;
+  for (const auto& key_version : vaild_setes) {
+    SetesMemberKey::EncodePrefix(key_version.key, key_version.version, &prefix);
+    auto iter = db_->NewIterator(read_options, handles_[1]);
+    for (iter->Seek(prefix);
+         iter->Valid() && iter->key().starts_with(prefix);
+         iter->Next()) {
+      ParsedSetesMemberKey parsed_setes_member_key(iter->key());
+      std::string member = parsed_setes_member_key.member().ToString();
+      if (result_flag.find(member) == result_flag.end()) {
+        members->push_back(member);
+        result_flag[member] = true;
+      }
+    }
+  }
+  return Status::OK();
+}
+
+Status RedisSetes::SUnionstore(const Slice& destination,
+                               const std::vector<std::string>& keys,
+                               int32_t* ret) {
 }
 
 Status RedisSetes::Expire(const Slice& key, int32_t ttl) {
