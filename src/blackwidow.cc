@@ -304,7 +304,8 @@ Status BlackWidow::SMembers(const Slice& key,
   return setes_db_->SMembers(key, members);
 }
 
-Status BlackWidow::SRem(const Slice& key, const std::vector<std::string>& members,
+Status BlackWidow::SRem(const Slice& key,
+                        const std::vector<std::string>& members,
                         int32_t* ret) {
   return setes_db_->SRem(key, members, ret);
 }

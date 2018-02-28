@@ -282,6 +282,14 @@ class BlackWidow {
   // This command is equal to SDIFF, but instead of returning the resulting set,
   // it is stored in destination.
   // If destination already exists, it is overwritten.
+  //
+  // For example:
+  //   destination = {};
+  //   key1 = {a, b, c, d}
+  //   key2 = {c}
+  //   key3 = {a, c, e}
+  //   SDIFFSTORE destination key1 key2 key3
+  //   destination = {b, d}
   Status SDiffstore(const Slice& destination,
                     const std::vector<std::string>& keys,
                     int32_t* ret);
@@ -290,9 +298,9 @@ class BlackWidow {
   // given sets.
   //
   // For example:
-  //   key1 = {a,b,c,d}
+  //   key1 = {a, b, c, d}
   //   key2 = {c}
-  //   key3 = {a,c,e}
+  //   key3 = {a, c, e}
   //   SINTER key1 key2 key3 = {c}
   Status SInter(const std::vector<std::string>& keys,
                 std::vector<std::string>* members);
@@ -300,6 +308,14 @@ class BlackWidow {
   // This command is equal to SINTER, but instead of returning the resulting
   // set, it is stored in destination.
   // If destination already exists, it is overwritten.
+  //
+  // For example:
+  //   destination = {}
+  //   key1 = {a, b, c, d}
+  //   key2 = {a, c}
+  //   key3 = {a, c, e}
+  //   SINTERSTORE destination key1 key2 key3
+  //   destination = {a, c}
   Status SInterstore(const Slice& destination,
                      const std::vector<std::string>& keys,
                      int32_t* ret);

@@ -191,7 +191,8 @@ Status RedisSetes::SDiff(const std::vector<std::string>& keys,
 
         found = false;
         for (const auto& key_version : vaild_setes) {
-          SetesMemberKey setes_member_key(key_version.key, key_version.version, member);
+          SetesMemberKey setes_member_key(key_version.key,
+                  key_version.version, member);
           s = db_->Get(read_options, handles_[1],
                   setes_member_key.Encode(), &member_value);
           if (s.ok()) {
@@ -265,7 +266,8 @@ Status RedisSetes::SDiffstore(const Slice& destination,
 
         found = false;
         for (const auto& key_version : vaild_setes) {
-          SetesMemberKey setes_member_key(key_version.key, key_version.version, member);
+          SetesMemberKey setes_member_key(key_version.key,
+                  key_version.version, member);
           s = db_->Get(read_options, handles_[1],
                   setes_member_key.Encode(), &member_value);
           if (s.ok()) {
@@ -363,7 +365,8 @@ Status RedisSetes::SInter(const std::vector<std::string>& keys,
 
         reliable = true;
         for (const auto& key_version : vaild_setes) {
-          SetesMemberKey setes_member_key(key_version.key, key_version.version, member);
+          SetesMemberKey setes_member_key(key_version.key,
+                  key_version.version, member);
           s = db_->Get(read_options, handles_[1],
                   setes_member_key.Encode(), &member_value);
           if (s.ok()) {
@@ -453,7 +456,8 @@ Status RedisSetes::SInterstore(const Slice& destination,
 
           reliable = true;
           for (const auto& key_version : vaild_setes) {
-            SetesMemberKey setes_member_key(key_version.key, key_version.version, member);
+            SetesMemberKey setes_member_key(key_version.key,
+                    key_version.version, member);
             s = db_->Get(read_options, handles_[1],
                     setes_member_key.Encode(), &member_value);
             if (s.ok()) {
