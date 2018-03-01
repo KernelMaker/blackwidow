@@ -11,9 +11,9 @@
 
 using namespace blackwidow;
 
-class SetesTest : public ::testing::Test {
+class SetsTest : public ::testing::Test {
  public:
-  SetesTest() {
+  SetsTest() {
     std::string path = "./db";
     if (access(path.c_str(), F_OK)) {
       mkdir(path.c_str(), 0755);
@@ -21,7 +21,7 @@ class SetesTest : public ::testing::Test {
     options.create_if_missing = true;
     s = db.Open(options, path);
   }
-  virtual ~SetesTest() { }
+  virtual ~SetsTest() { }
 
   static void SetUpTestCase() { }
   static void TearDownTestCase() { }
@@ -32,7 +32,7 @@ class SetesTest : public ::testing::Test {
 };
 
 // SAdd
-TEST_F(SetesTest, SAddTest) {
+TEST_F(SetsTest, SAddTest) {
   int32_t ret = 0;
   std::vector<std::string> members1 {"MM1", "MM2", "MM3", "MM2"};
   s = db.SAdd("SADD_KEY", members1, &ret);
@@ -52,7 +52,7 @@ TEST_F(SetesTest, SAddTest) {
 
   std::map<BlackWidow::DataType, rocksdb::Status> type_status;
   db.Expire("SADD_KEY", 1, &type_status);
-  ASSERT_TRUE(type_status[BlackWidow::DataType::kSetes].ok());
+  ASSERT_TRUE(type_status[BlackWidow::DataType::kSets].ok());
 
   // The key has timeout
   std::this_thread::sleep_for(std::chrono::milliseconds(2000));
@@ -72,7 +72,7 @@ TEST_F(SetesTest, SAddTest) {
   std::vector<rocksdb::Slice> del_keys = {"SADD_KEY"};
   type_status.clear();
   db.Del(del_keys, &type_status);
-  ASSERT_TRUE(type_status[BlackWidow::DataType::kSetes].ok());
+  ASSERT_TRUE(type_status[BlackWidow::DataType::kSets].ok());
   s = db.SCard("SADD_KEY", &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(ret, 0);
@@ -87,7 +87,7 @@ TEST_F(SetesTest, SAddTest) {
 }
 
 // SCard
-TEST_F(SetesTest, SCardTest) {
+TEST_F(SetsTest, SCardTest) {
   int32_t ret = 0;
   std::vector<std::string> members {"MM1", "MM2", "MM3"};
   s = db.SAdd("SCARD_KEY", members, &ret);
@@ -99,7 +99,7 @@ TEST_F(SetesTest, SCardTest) {
 }
 
 // SDiff
-TEST_F(SetesTest, SDiffTest) {
+TEST_F(SetsTest, SDiffTest) {
   int32_t ret = 0;
 
   // ***************** Group 1 Test *****************
@@ -137,7 +137,7 @@ TEST_F(SetesTest, SDiffTest) {
   // SDIFF key1 key2 key3  = {a, b, d}
   std::map<BlackWidow::DataType, rocksdb::Status> gp1_type_status;
   db.Expire("GP1_SDIFF_KEY3", 1, &gp1_type_status);
-  ASSERT_TRUE(gp1_type_status[BlackWidow::DataType::kSetes].ok());
+  ASSERT_TRUE(gp1_type_status[BlackWidow::DataType::kSets].ok());
   std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 
   gp1_members_out.clear();
@@ -238,7 +238,7 @@ TEST_F(SetesTest, SDiffTest) {
 
   std::map<BlackWidow::DataType, rocksdb::Status> gp4_type_status;
   db.Expire("GP4_SDIFF_KEY1", 1, &gp4_type_status);
-  ASSERT_TRUE(gp4_type_status[BlackWidow::DataType::kSetes].ok());
+  ASSERT_TRUE(gp4_type_status[BlackWidow::DataType::kSets].ok());
   std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 
   std::vector<std::string> gp4_keys {"GP4_SDIFF_KEY1",
@@ -300,7 +300,7 @@ TEST_F(SetesTest, SDiffTest) {
 }
 
 // SDiffstore
-TEST_F(SetesTest, SDiffstoreTest) {
+TEST_F(SetsTest, SDiffstoreTest) {
   int32_t ret = 0;
 
   // ***************** Group 1 Test *****************
@@ -348,7 +348,7 @@ TEST_F(SetesTest, SDiffstoreTest) {
   // destination = {a, b, d}
   std::map<BlackWidow::DataType, rocksdb::Status> gp1_type_status;
   db.Expire("GP1_SDIFFSTORE_KEY3", 1, &gp1_type_status);
-  ASSERT_TRUE(gp1_type_status[BlackWidow::DataType::kSetes].ok());
+  ASSERT_TRUE(gp1_type_status[BlackWidow::DataType::kSets].ok());
   std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 
   gp1_members_out.clear();
@@ -481,7 +481,7 @@ TEST_F(SetesTest, SDiffstoreTest) {
 
   std::map<BlackWidow::DataType, rocksdb::Status> gp4_type_status;
   db.Expire("GP4_SDIFFSTORE_KEY1", 1, &gp4_type_status);
-  ASSERT_TRUE(gp4_type_status[BlackWidow::DataType::kSetes].ok());
+  ASSERT_TRUE(gp4_type_status[BlackWidow::DataType::kSets].ok());
   std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 
   std::vector<std::string> gp4_keys {"GP4_SDIFFSTORE_KEY1",
@@ -608,7 +608,7 @@ TEST_F(SetesTest, SDiffstoreTest) {
 
   std::map<BlackWidow::DataType, rocksdb::Status> gp7_type_status;
   db.Expire("GP7_SDIFFSTORE_DESTINATION1", 1, &gp7_type_status);
-  ASSERT_TRUE(gp4_type_status[BlackWidow::DataType::kSetes].ok());
+  ASSERT_TRUE(gp4_type_status[BlackWidow::DataType::kSets].ok());
   std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 
   std::vector<std::string> gp7_members_out;
@@ -630,7 +630,7 @@ TEST_F(SetesTest, SDiffstoreTest) {
 }
 
 // SInter
-TEST_F(SetesTest, SInterTest) {
+TEST_F(SetsTest, SInterTest) {
   int32_t ret = 0;
 
   // ***************** Group 1 Test *****************
@@ -668,7 +668,7 @@ TEST_F(SetesTest, SInterTest) {
   // SINTER key1 key2 key3  = {}
   std::map<BlackWidow::DataType, rocksdb::Status> gp1_type_status;
   db.Expire("GP1_SINTER_KEY3", 1, &gp1_type_status);
-  ASSERT_TRUE(gp1_type_status[BlackWidow::DataType::kSetes].ok());
+  ASSERT_TRUE(gp1_type_status[BlackWidow::DataType::kSets].ok());
   std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 
   gp1_members_out.clear();
@@ -811,7 +811,7 @@ TEST_F(SetesTest, SInterTest) {
 }
 
 // SInterstore
-TEST_F(SetesTest, SInterstoreTest) {
+TEST_F(SetsTest, SInterstoreTest) {
   int32_t ret = 0;
 
   // ***************** Group 1 Test *****************
@@ -952,7 +952,7 @@ TEST_F(SetesTest, SInterstoreTest) {
 
   std::map<BlackWidow::DataType, rocksdb::Status> gp4_type_status;
   db.Expire("GP4_SINTERSTORE_KEY2", 1, &gp4_type_status);
-  ASSERT_TRUE(gp4_type_status[BlackWidow::DataType::kSetes].ok());
+  ASSERT_TRUE(gp4_type_status[BlackWidow::DataType::kSets].ok());
   std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 
   std::vector<std::string> gp4_keys {"GP4_SINTERSTORE_KEY1",
@@ -991,7 +991,7 @@ TEST_F(SetesTest, SInterstoreTest) {
 
   std::map<BlackWidow::DataType, rocksdb::Status> gp5_type_status;
   db.Expire("GP5_SINTERSTORE_KEY1", 1, &gp5_type_status);
-  ASSERT_TRUE(gp5_type_status[BlackWidow::DataType::kSetes].ok());
+  ASSERT_TRUE(gp5_type_status[BlackWidow::DataType::kSets].ok());
   std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 
   std::vector<std::string> gp5_keys {"GP5_SINTERSTORE_KEY1",
@@ -1127,7 +1127,7 @@ TEST_F(SetesTest, SInterstoreTest) {
 
 
 // SIsmember
-TEST_F(SetesTest, SIsmemberTest) {
+TEST_F(SetsTest, SIsmemberTest) {
   int32_t ret = 0;
   std::vector<std::string> members {"MEMBER"};
   s = db.SAdd("SISMEMBER_KEY", members, &ret);
@@ -1151,7 +1151,7 @@ TEST_F(SetesTest, SIsmemberTest) {
   // Expire set key
   std::map<BlackWidow::DataType, rocksdb::Status> type_status;
   db.Expire("SISMEMBER_KEY", 1, &type_status);
-  ASSERT_TRUE(type_status[BlackWidow::DataType::kSetes].ok());
+  ASSERT_TRUE(type_status[BlackWidow::DataType::kSets].ok());
   std::this_thread::sleep_for(std::chrono::milliseconds(2000));
   s = db.SIsmember("SISMEMBER_KEY", "MEMBER", &ret);
   ASSERT_TRUE(s.IsNotFound());
@@ -1159,7 +1159,7 @@ TEST_F(SetesTest, SIsmemberTest) {
 }
 
 // SMembers
-TEST_F(SetesTest, SMembersTest) {
+TEST_F(SetsTest, SMembersTest) {
   int32_t ret = 0;
   std::vector<std::string> mid_members_in;
   mid_members_in.push_back("MID_MEMBER1");
@@ -1222,7 +1222,7 @@ TEST_F(SetesTest, SMembersTest) {
   members_out.clear();
   std::map<BlackWidow::DataType, rocksdb::Status> type_status;
   db.Expire("B_SMEMBERS_KEY", 1, &type_status);
-  ASSERT_TRUE(type_status[BlackWidow::DataType::kSetes].ok());
+  ASSERT_TRUE(type_status[BlackWidow::DataType::kSets].ok());
   std::this_thread::sleep_for(std::chrono::milliseconds(2000));
   s = db.SMembers("B_SMEMBERS_KEY", &members_out);
   ASSERT_TRUE(s.IsNotFound());
@@ -1236,7 +1236,7 @@ TEST_F(SetesTest, SMembersTest) {
 }
 
 // SRem
-TEST_F(SetesTest, SRemTest) {
+TEST_F(SetsTest, SRemTest) {
   int32_t ret = 0;
 
   // ***************** Group 1 Test *****************
@@ -1311,7 +1311,7 @@ TEST_F(SetesTest, SRemTest) {
 
   std::map<BlackWidow::DataType, rocksdb::Status> gp4_type_status;
   db.Expire("GP4_SREM_KEY", 1, &gp4_type_status);
-  ASSERT_TRUE(gp4_type_status[BlackWidow::DataType::kSetes].ok());
+  ASSERT_TRUE(gp4_type_status[BlackWidow::DataType::kSets].ok());
   std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 
   std::vector<std::string> gp4_del_members {"a", "b"};
@@ -1326,7 +1326,7 @@ TEST_F(SetesTest, SRemTest) {
 }
 
 // SUnion
-TEST_F(SetesTest, SUnionTest) {
+TEST_F(SetsTest, SUnionTest) {
   int32_t ret = 0;
 
   // ***************** Group 1 Test *****************
@@ -1370,7 +1370,7 @@ TEST_F(SetesTest, SUnionTest) {
   // SUNION key1 key2 key3  = {a, b, c, d}
   std::map<BlackWidow::DataType, rocksdb::Status> gp1_type_status;
   db.Expire("GP1_SUNION_KEY3", 1, &gp1_type_status);
-  ASSERT_TRUE(gp1_type_status[BlackWidow::DataType::kSetes].ok());
+  ASSERT_TRUE(gp1_type_status[BlackWidow::DataType::kSets].ok());
   std::this_thread::sleep_for(std::chrono::milliseconds(2000));
   gp1_members_out.clear();
 
@@ -1492,7 +1492,7 @@ TEST_F(SetesTest, SUnionTest) {
 }
 
 // SUnionstore
-TEST_F(SetesTest, SUnionstoreTest) {
+TEST_F(SetsTest, SUnionstoreTest) {
   int32_t ret = 0;
 
   // ***************** Group 1 Test *****************
@@ -1546,7 +1546,7 @@ TEST_F(SetesTest, SUnionstoreTest) {
   // destination = {a, b, c, d}
   std::map<BlackWidow::DataType, rocksdb::Status> gp1_type_status;
   db.Expire("GP1_SUNIONSTORE_KEY3", 1, &gp1_type_status);
-  ASSERT_TRUE(gp1_type_status[BlackWidow::DataType::kSetes].ok());
+  ASSERT_TRUE(gp1_type_status[BlackWidow::DataType::kSets].ok());
   std::this_thread::sleep_for(std::chrono::milliseconds(2000));
   gp1_members_out.clear();
 

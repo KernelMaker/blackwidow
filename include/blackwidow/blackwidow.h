@@ -22,7 +22,7 @@ using Slice = rocksdb::Slice;
 
 class RedisStrings;
 class RedisHashes;
-class RedisSetes;
+class RedisSets;
 class MutexFactory;
 class Mutex;
 class BlackWidow {
@@ -253,7 +253,7 @@ class BlackWidow {
               int32_t* ret);
 
 
-  // Setes Commands
+  // Sets Commands
   struct KeyVersion {
     std::string key;
     int32_t version;
@@ -365,7 +365,7 @@ class BlackWidow {
     kHashes,
     kLists,
     kZSets,
-    kSetes
+    kSets
   };
 
   // Note:
@@ -426,7 +426,7 @@ class BlackWidow {
  private:
   RedisStrings* strings_db_;
   RedisHashes* hashes_db_;
-  RedisSetes* setes_db_;
+  RedisSets* sets_db_;
 
   MutexFactory* mutex_factory_;
 
