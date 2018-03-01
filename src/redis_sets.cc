@@ -565,6 +565,88 @@ Status RedisSets::SMembers(const Slice& key,
   return s;
 }
 
+Status RedisSets::SMove(const Slice& source, const Slice& destination,
+                        const Slice& member, int32_t* ret) {
+  rocksdb::WriteBatch batch;
+  rocksdb::ReadOptions read_options;
+  const rocksdb::Snapshot* snapshot;
+
+  std::vector<std::string> keys {source.ToString(), destination.ToString()};
+  std::string meta_value;
+  int32_t version = 0;
+  MultiScopeRecordLock ml(lock_mgr_, keys);
+  ScopeSnapshot ss(db_, &snapshot);
+  read_options.snapshot = snapshot;
+
+  Status s = db_->Get(read_options, handles_[0], source, &meta_value);
+  if (s.ok()) {
+    ParsedSetsMetaValue parsed_sets_meta_value(&meta_value);
+    if (parsed_sets_meta_value.IsStale()) {
+      *ret = 0;
+      return Status::NotFound("Stale");
+    } else {
+      std::string member_value;
+      version = parsed_sets_meta_value.version();
+      SetsMemberKey sets_member_key(source, version, member);
+      s = db_->Get(read_options, handles_[1],
+              sets_member_key.Encode(), &member_value);
+      if (s.ok()) {
+        *ret = 1;
+        parsed_sets_meta_value.ModifyCount(-1);
+        batch.Put(handles_[0], source, meta_value);
+        batch.Delete(handles_[1], sets_member_key.Encode());
+      } else if (s.IsNotFound()) {
+        *ret = 0;
+        return Status::NotFound();
+      } else {
+        return s;
+      }
+    }
+  } else if (s.IsNotFound()) {
+    *ret = 0;
+    return Status::NotFound();
+  } else {
+    return s;
+  }
+
+  s = db_->Get(read_options, handles_[0], destination, &meta_value);
+  if (s.ok()) {
+    ParsedSetsMetaValue parsed_sets_meta_value(&meta_value);
+    if (parsed_sets_meta_value.IsStale()) {
+      version = parsed_sets_meta_value.UpdateVersion();
+      parsed_sets_meta_value.set_count(1);
+      parsed_sets_meta_value.set_timestamp(0);
+      batch.Put(handles_[0], destination, meta_value);
+      SetsMemberKey sets_member_key(destination, version, member);
+      batch.Put(handles_[1], sets_member_key.Encode(), Slice());
+    } else {
+      std::string member_value;
+      version = parsed_sets_meta_value.version();
+      SetsMemberKey sets_member_key(destination, version, member);
+      s = db_->Get(read_options, handles_[1],
+              sets_member_key.Encode(), &member_value);
+      if (s.IsNotFound()) {
+        parsed_sets_meta_value.ModifyCount(1);
+        batch.Put(handles_[0], destination, meta_value);
+        batch.Put(handles_[1], sets_member_key.Encode(), Slice());
+      } else if (!s.ok()) {
+        return s;
+      }
+    }
+  } else if (s.IsNotFound()) {
+    char str[4];
+    EncodeFixed32(str, 1);
+    SetsMetaValue sets_meta_value(std::string(str, sizeof(int32_t)));
+    version = sets_meta_value.UpdateVersion();
+    batch.Put(handles_[0], destination, sets_meta_value.Encode());
+    SetsMemberKey sets_member_key(destination, version, member);
+    batch.Put(handles_[1], sets_member_key.Encode(), Slice());
+  } else {
+    return s;
+  }
+  return db_->Write(default_write_options_, &batch);
+}
+
 Status RedisSets::SRem(const Slice& key,
                         const std::vector<std::string>& members,
                         int32_t* ret) {

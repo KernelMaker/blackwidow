@@ -38,6 +38,8 @@ class RedisSets : public Redis {
                    int32_t* ret);
   Status SMembers(const Slice& key,
                   std::vector<std::string>* members);
+  Status SMove(const Slice& source, const Slice& destination,
+               const Slice& member, int32_t* ret);
   Status SRem(const Slice& key, const std::vector<std::string>& members,
               int32_t* ret);
   Status SUnion(const std::vector<std::string>& keys,

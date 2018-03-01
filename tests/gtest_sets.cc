@@ -31,6 +31,50 @@ class SetsTest : public ::testing::Test {
   blackwidow::Status s;
 };
 
+static bool members_match(blackwidow::BlackWidow& db,
+                          const Slice& key,
+                          const std::vector<std::string>& members) {
+  std::vector<std::string> mm_out;
+  Status s = db.SMembers(key, &mm_out);
+  if (!s.ok() && !s.IsNotFound()) {
+    return false;
+  }
+  if (s.IsNotFound() && members.empty()) {
+    return true;
+  }
+  for (const auto& member : members) {
+    if (find(mm_out.begin(), mm_out.end(), member) == mm_out.end()) {
+      return false;
+    }
+  }
+  return true;
+}
+
+static bool size_match(blackwidow::BlackWidow& db,
+                       const Slice& key,
+                       int32_t expect_size) {
+  int32_t size = 0;
+  Status s = db.SCard(key, &size);
+  if (!s.ok() && !s.IsNotFound()) {
+    return false;
+  }
+  if (s.IsNotFound() && !expect_size) {
+    return true;
+  }
+  return size == expect_size;
+}
+
+static bool make_expired(blackwidow::BlackWidow& db,
+                         const Slice& key) {
+  std::map<BlackWidow::DataType, rocksdb::Status> type_status;
+  int ret = db.Expire(key, 1, &type_status);
+  if (!ret || !type_status[BlackWidow::DataType::kSets].ok()) {
+    return false;
+  }
+  std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+  return true;
+}
+
 // SAdd
 TEST_F(SetsTest, SAddTest) {
   int32_t ret = 0;
@@ -1233,6 +1277,222 @@ TEST_F(SetsTest, SMembersTest) {
   s = db.SMembers("SMEMBERS_NOT_EXIST_KEY", &members_out);
   ASSERT_TRUE(s.IsNotFound());
   ASSERT_EQ(members_out.size(), 0);
+}
+
+// SMove
+TEST_F(SetsTest, SMoveTest) {
+  int32_t ret = 0;
+  // ***************** Group 1 Test *****************
+  // source = {a, b, c, d}
+  // destination = {a, c}
+  // SMove source destination d
+  // source = {a, b, c}
+  // destination = {a, c, d}
+  std::vector<std::string> gp1_source {"a", "b", "c", "d"};
+  std::vector<std::string> gp1_destination {"a", "c"};
+  s = db.SAdd("GP1_SMOVE_SOURCE", gp1_source, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 4);
+  s = db.SAdd("GP1_SMOVE_DESTINATION", gp1_destination, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 2);
+
+  s = db.SMove("GP1_SMOVE_SOURCE", "GP1_SMOVE_DESTINATION", "d", &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 1);
+
+  ASSERT_TRUE(size_match(db, "GP1_SMOVE_SOURCE", 3));
+  ASSERT_TRUE(members_match(db, "GP1_SMOVE_SOURCE", {"a", "b", "c"}));
+  ASSERT_TRUE(size_match(db, "GP1_SMOVE_DESTINATION", 3));
+  ASSERT_TRUE(members_match(db, "GP1_SMOVE_DESTINATION", {"a", "c", "d"}));
+
+
+  // ***************** Group 2 Test *****************
+  // source = {a, b, c, d}
+  // destination = {a, c}   (expire key);
+  // SMove source destination d
+  // source = {a, b, c}
+  // destination = {d}
+  std::vector<std::string> gp2_source {"a", "b", "c", "d"};
+  std::vector<std::string> gp2_destination {"a", "c"};
+  s = db.SAdd("GP2_SMOVE_SOURCE", gp2_source, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 4);
+  s = db.SAdd("GP2_SMOVE_DESTINATION", gp2_destination, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 2);
+
+  ASSERT_TRUE(make_expired(db, "GP2_SMOVE_DESTINATION"));
+
+  s = db.SMove("GP2_SMOVE_SOURCE", "GP2_SMOVE_DESTINATION", "d", &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 1);
+
+  ASSERT_TRUE(size_match(db, "GP2_SMOVE_SOURCE", 3));
+  ASSERT_TRUE(members_match(db, "GP2_SMOVE_SOURCE", {"a", "b", "c"}));
+  ASSERT_TRUE(size_match(db, "GP2_SMOVE_DESTINATION", 1));
+  ASSERT_TRUE(members_match(db, "GP2_SMOVE_DESTINATION", {"d"}));
+
+
+  // ***************** Group 3 Test *****************
+  // source = {a, x, l}
+  // destination = {}
+  // SMove source destination x
+  // source = {a, l}
+  // destination = {x}
+  std::vector<std::string> gp3_source {"a", "x", "l"};
+  std::vector<std::string> gp3_destination {"a", "b"};
+  s = db.SAdd("GP3_SMOVE_SOURCE", gp3_source, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 3);
+  s = db.SAdd("GP3_SMOVE_DESTINATION", gp3_destination, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 2);
+
+  s = db.SRem("GP3_SMOVE_DESTINATION", gp3_destination, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 2);
+  s = db.SCard("GP3_SMOVE_DESTINATION", &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 0);
+
+  s = db.SMove("GP3_SMOVE_SOURCE", "GP3_SMOVE_DESTINATION", "x", &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 1);
+
+  ASSERT_TRUE(size_match(db, "GP3_SMOVE_SOURCE", 2));
+  ASSERT_TRUE(members_match(db, "GP3_SMOVE_SOURCE", {"a", "l"}));
+  ASSERT_TRUE(size_match(db, "GP3_SMOVE_DESTINATION", 1));
+  ASSERT_TRUE(members_match(db, "GP3_SMOVE_DESTINATION", {"x"}));
+
+
+  // ***************** Group 4 Test *****************
+  // source = {a, x, l}
+  // SMove source not_exist_key x
+  // source = {a, l}
+  // not_exist_key = {x}
+  std::vector<std::string> gp4_source {"a", "x", "l"};
+  s = db.SAdd("GP4_SMOVE_SOURCE", gp4_source, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 3);
+
+  s = db.SMove("GP4_SMOVE_SOURCE", "GP4_SMOVE_NOT_EXIST_KEY", "x", &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 1);
+
+  ASSERT_TRUE(size_match(db, "GP4_SMOVE_SOURCE", 2));
+  ASSERT_TRUE(members_match(db, "GP4_SMOVE_SOURCE", {"a", "l"}));
+  ASSERT_TRUE(size_match(db, "GP4_SMOVE_NOT_EXIST_KEY", 1));
+  ASSERT_TRUE(members_match(db, "GP4_SMOVE_NOT_EXIST_KEY", {"x"}));
+
+
+  // ***************** Group 5 Test *****************
+  // source = {}
+  // destination = {a, x, l}
+  // SMove source destination x
+  // source = {}
+  // destination = {a, x, l}
+  std::vector<std::string> gp5_source {"a", "b"};
+  std::vector<std::string> gp5_destination {"a", "x", "l"};
+  s = db.SAdd("GP5_SMOVE_SOURCE", gp5_source, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 2);
+  s = db.SAdd("GP5_SMOVE_DESTINATION", gp5_destination, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 3);
+
+  s = db.SRem("GP5_SMOVE_SOURCE", gp5_source, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 2);
+  s = db.SCard("GP5_SMOVE_SOURCE", &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 0);
+
+  s = db.SMove("GP5_SMOVE_SOURCE", "GP5_SMOVE_DESTINATION", "x", &ret);
+  ASSERT_TRUE(s.IsNotFound());
+  ASSERT_EQ(ret, 0);
+
+  ASSERT_TRUE(size_match(db, "GP5_SMOVE_SOURCE", 0));
+  ASSERT_TRUE(members_match(db, "GP5_SMOVE_SOURCE", {}));
+  ASSERT_TRUE(size_match(db, "GP5_SMOVE_DESTINATION", 3));
+  ASSERT_TRUE(members_match(db, "GP5_SMOVE_DESTINATION", {"a", "x", "l"}));
+
+
+  // ***************** Group 6 Test *****************
+  // source = {a, b, c, d}  (expire key);
+  // destination = {a, c}
+  // SMove source destination d
+  // source = {}
+  // destination = {d}
+  std::vector<std::string> gp6_source {"a", "b", "c", "d"};
+  std::vector<std::string> gp6_destination {"a", "c"};
+  s = db.SAdd("GP6_SMOVE_SOURCE", gp6_source, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 4);
+  s = db.SAdd("GP6_SMOVE_DESTINATION", gp6_destination, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 2);
+
+  ASSERT_TRUE(make_expired(db, "GP6_SMOVE_SOURCE"));
+
+  s = db.SMove("GP6_SMOVE_SOURCE", "GP6_SMOVE_DESTINATION", "d", &ret);
+  ASSERT_TRUE(s.IsNotFound());
+  ASSERT_EQ(ret, 0);
+
+  ASSERT_TRUE(size_match(db, "GP6_SMOVE_SOURCE", 0));
+  ASSERT_TRUE(members_match(db, "GP6_SMOVE_SOURCE", {}));
+  ASSERT_TRUE(size_match(db, "GP6_SMOVE_DESTINATION", 2));
+  ASSERT_TRUE(members_match(db, "GP6_SMOVE_DESTINATION", {"a", "c"}));
+
+
+  // ***************** Group 7 Test *****************
+  // source = {a, b, c, d}
+  // destination = {a, c}
+  // SMove source destination x
+  // source = {a, b, c, d}
+  // destination = {a, c}
+  std::vector<std::string> gp7_source {"a", "b", "c", "d"};
+  std::vector<std::string> gp7_destination {"a", "c"};
+  s = db.SAdd("GP7_SMOVE_SOURCE", gp7_source, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 4);
+  s = db.SAdd("GP7_SMOVE_DESTINATION", gp7_destination, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 2);
+
+  s = db.SMove("GP7_SMOVE_SOURCE", "GP7_SMOVE_DESTINATION", "x", &ret);
+  ASSERT_TRUE(s.IsNotFound());
+  ASSERT_EQ(ret, 0);
+
+  ASSERT_TRUE(size_match(db, "GP7_SMOVE_SOURCE", 4));
+  ASSERT_TRUE(members_match(db, "GP7_SMOVE_SOURCE", {"a", "b", "c", "d"}));
+  ASSERT_TRUE(size_match(db, "GP7_SMOVE_DESTINATION", 2));
+  ASSERT_TRUE(members_match(db, "GP7_SMOVE_DESTINATION", {"a", "c"}));
+
+
+  // ***************** Group 8 Test *****************
+  // source = {a, b, c, d}
+  // destination = {a, c, d}
+  // SMove source destination d
+  // source = {a, b, c, d}
+  // destination = {a, c, d}
+  std::vector<std::string> gp8_source {"a", "b", "c", "d"};
+  std::vector<std::string> gp8_destination {"a", "c", "d"};
+  s = db.SAdd("GP8_SMOVE_SOURCE", gp8_source, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 4);
+  s = db.SAdd("GP8_SMOVE_DESTINATION", gp8_destination, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 3);
+
+  s = db.SMove("GP8_SMOVE_SOURCE", "GP8_SMOVE_DESTINATION", "d", &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 1);
+
+  ASSERT_TRUE(size_match(db, "GP8_SMOVE_SOURCE", 3));
+  ASSERT_TRUE(members_match(db, "GP8_SMOVE_SOURCE", {"a", "b", "c"}));
+  ASSERT_TRUE(size_match(db, "GP8_SMOVE_DESTINATION", 3));
+  ASSERT_TRUE(members_match(db, "GP8_SMOVE_DESTINATION", {"a", "c", "d"}));
 }
 
 // SRem

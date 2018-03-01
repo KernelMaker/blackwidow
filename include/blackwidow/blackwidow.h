@@ -334,6 +334,19 @@ class BlackWidow {
   Status SRem(const Slice& key, const std::vector<std::string>& members,
               int32_t* ret);
 
+  // Move member from the set at source to the set at destination. This
+  // operation is atomic. In every given moment the element will appear to be a
+  // member of source or destination for other clients.
+  //
+  // If the source set does not exist or does not contain the specified element,
+  // no operation is performed and 0 is returned. Otherwise, the element is
+  // removed from the source set and added to the destination set. When the
+  // specified element already exists in the destination set, it is only removed
+  // from the source set.
+  Status SMove(const Slice& source, const Slice& destination,
+               const Slice& member, int32_t* ret);
+
+
   // Returns the members of the set resulting from the union of all the given
   // sets.
   //
