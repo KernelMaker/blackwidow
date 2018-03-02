@@ -21,7 +21,7 @@ RedisHashes::~RedisHashes() {
 }
 
 Status RedisHashes::Open(const rocksdb::Options& options,
-    const std::string& db_path) {
+                         const std::string& db_path) {
   rocksdb::Options ops(options);
   Status s = rocksdb::DB::Open(ops, db_path, &db_);
   if (s.ok()) {
@@ -56,7 +56,7 @@ Status RedisHashes::Open(const rocksdb::Options& options,
 }
 
 Status RedisHashes::HSet(const Slice& key, const Slice& field,
-        const Slice& value, int32_t* res) {
+                         const Slice& value, int32_t* res) {
   rocksdb::WriteBatch batch;
   rocksdb::ReadOptions read_options;
   const rocksdb::Snapshot* snapshot;
@@ -111,7 +111,7 @@ Status RedisHashes::HSet(const Slice& key, const Slice& field,
 }
 
 Status RedisHashes::HGet(const Slice& key, const Slice& field,
-    std::string* value) {
+                         std::string* value) {
   std::string meta_value;
   int32_t version = 0;
   rocksdb::ReadOptions read_options;
@@ -768,7 +768,7 @@ Status RedisHashes::TTL(const Slice& key, int64_t* timestamp) {
 }
 
 Status RedisHashes::CompactRange(const rocksdb::Slice* begin,
-    const rocksdb::Slice* end) {
+                                 const rocksdb::Slice* end) {
   Status s = db_->CompactRange(default_compact_range_options_,
       handles_[0], begin, end);
   if (!s.ok()) {
