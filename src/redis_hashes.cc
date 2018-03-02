@@ -260,6 +260,7 @@ Status RedisHashes::HGetall(const Slice& key,
         fvs->push_back({parsed_hashes_data_key.field().ToString(),
                 iter->value().ToString()});
       }
+      delete iter;
     }
   }
   return s;
@@ -290,6 +291,7 @@ Status RedisHashes::HKeys(const Slice& key,
         ParsedHashesDataKey parsed_hashes_data_key(iter->key());
         fields->push_back(parsed_hashes_data_key.field().ToString());
       }
+      delete iter;
     }
   }
   return s;
@@ -319,6 +321,7 @@ Status RedisHashes::HVals(const Slice& key,
            iter->Next()) {
         values->push_back(iter->value().ToString());
       }
+      delete iter;
     }
   }
   return s;

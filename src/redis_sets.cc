@@ -199,6 +199,7 @@ Status RedisSets::SDiff(const std::vector<std::string>& keys,
             found = true;
             break;
           } else if (!s.IsNotFound()) {
+            delete iter;
             return s;
           }
         }
@@ -206,6 +207,7 @@ Status RedisSets::SDiff(const std::vector<std::string>& keys,
           members->push_back(member.ToString());
         }
       }
+      delete iter;
     }
   } else if (!s.IsNotFound()) {
     return s;
@@ -274,6 +276,7 @@ Status RedisSets::SDiffstore(const Slice& destination,
             found = true;
             break;
           } else if (!s.IsNotFound()) {
+            delete iter;
             return s;
           }
         }
@@ -281,6 +284,7 @@ Status RedisSets::SDiffstore(const Slice& destination,
           members.push_back(member.ToString());
         }
       }
+      delete iter;
     }
   } else if (!s.IsNotFound()) {
     return s;
@@ -375,6 +379,7 @@ Status RedisSets::SInter(const std::vector<std::string>& keys,
             reliable = false;
             break;
           } else {
+            delete iter;
             return s;
           }
         }
@@ -382,6 +387,7 @@ Status RedisSets::SInter(const std::vector<std::string>& keys,
           members->push_back(member.ToString());
         }
       }
+      delete iter;
     }
   } else if (s.IsNotFound()) {
     return Status::OK();
@@ -466,6 +472,7 @@ Status RedisSets::SInterstore(const Slice& destination,
               reliable = false;
               break;
             } else {
+              delete iter;
               return s;
             }
           }
@@ -473,6 +480,7 @@ Status RedisSets::SInterstore(const Slice& destination,
             members.push_back(member.ToString());
           }
         }
+        delete iter;
       }
     } else if (s.IsNotFound()) {
     } else {
@@ -560,6 +568,7 @@ Status RedisSets::SMembers(const Slice& key,
         ParsedSetsMemberKey parsed_sets_member_key(iter->key());
         members->push_back(parsed_sets_member_key.member().ToString());
       }
+      delete iter;
     }
   }
   return s;
@@ -738,6 +747,7 @@ Status RedisSets::SUnion(const std::vector<std::string>& keys,
         result_flag[member] = true;
       }
     }
+    delete iter;
   }
   return Status::OK();
 }
@@ -793,6 +803,7 @@ Status RedisSets::SUnionstore(const Slice& destination,
         result_flag[member] = true;
       }
     }
+    delete iter;
   }
 
   s = db_->Get(read_options, handles_[0], destination, &meta_value);
