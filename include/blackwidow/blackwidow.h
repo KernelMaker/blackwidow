@@ -22,7 +22,7 @@ using Slice = rocksdb::Slice;
 
 class RedisStrings;
 class RedisHashes;
-class RedisSetes;
+class RedisSets;
 class MutexFactory;
 class Mutex;
 class BlackWidow {
@@ -253,7 +253,11 @@ class BlackWidow {
               int32_t* ret);
 
 
-  // Setes Commands
+  // Sets Commands
+  struct KeyVersion {
+    std::string key;
+    int32_t version;
+  };
 
   // Add the specified members to the set stored at key. Specified members that
   // are already a member of this set are ignored. If key does not exist, a new
@@ -264,6 +268,109 @@ class BlackWidow {
   // Returns the set cardinality (number of elements) of the set stored at key.
   Status SCard(const Slice& key, int32_t* ret);
 
+  // Returns the members of the set resulting from the difference between the
+  // first set and all the successive sets.
+  //
+  // For example:
+  //   key1 = {a, b, c, d}
+  //   key2 = {c}
+  //   key3 = {a, c, e}
+  //   SDIFF key1 key2 key3  = {b, d}
+  Status SDiff(const std::vector<std::string>& keys,
+               std::vector<std::string>* members);
+
+  // This command is equal to SDIFF, but instead of returning the resulting set,
+  // it is stored in destination.
+  // If destination already exists, it is overwritten.
+  //
+  // For example:
+  //   destination = {};
+  //   key1 = {a, b, c, d}
+  //   key2 = {c}
+  //   key3 = {a, c, e}
+  //   SDIFFSTORE destination key1 key2 key3
+  //   destination = {b, d}
+  Status SDiffstore(const Slice& destination,
+                    const std::vector<std::string>& keys,
+                    int32_t* ret);
+
+  // Returns the members of the set resulting from the intersection of all the
+  // given sets.
+  //
+  // For example:
+  //   key1 = {a, b, c, d}
+  //   key2 = {c}
+  //   key3 = {a, c, e}
+  //   SINTER key1 key2 key3 = {c}
+  Status SInter(const std::vector<std::string>& keys,
+                std::vector<std::string>* members);
+
+  // This command is equal to SINTER, but instead of returning the resulting
+  // set, it is stored in destination.
+  // If destination already exists, it is overwritten.
+  //
+  // For example:
+  //   destination = {}
+  //   key1 = {a, b, c, d}
+  //   key2 = {a, c}
+  //   key3 = {a, c, e}
+  //   SINTERSTORE destination key1 key2 key3
+  //   destination = {a, c}
+  Status SInterstore(const Slice& destination,
+                     const std::vector<std::string>& keys,
+                     int32_t* ret);
+
+  // Returns if member is a member of the set stored at key.
+  Status SIsmember(const Slice& key, const Slice& member,
+                   int32_t* ret);
+
+  // Returns all the members of the set value stored at key.
+  // This has the same effect as running SINTER with one argument key.
+  Status SMembers(const Slice& key, std::vector<std::string>* members);
+
+  // Remove the specified members from the set stored at key. Specified members
+  // that are not a member of this set are ignored. If key does not exist, it is
+  // treated as an empty set and this command returns 0.
+  Status SRem(const Slice& key, const std::vector<std::string>& members,
+              int32_t* ret);
+
+  // Move member from the set at source to the set at destination. This
+  // operation is atomic. In every given moment the element will appear to be a
+  // member of source or destination for other clients.
+  //
+  // If the source set does not exist or does not contain the specified element,
+  // no operation is performed and 0 is returned. Otherwise, the element is
+  // removed from the source set and added to the destination set. When the
+  // specified element already exists in the destination set, it is only removed
+  // from the source set.
+  Status SMove(const Slice& source, const Slice& destination,
+               const Slice& member, int32_t* ret);
+
+
+  // Returns the members of the set resulting from the union of all the given
+  // sets.
+  //
+  // For example:
+  //   key1 = {a, b, c, d}
+  //   key2 = {c}
+  //   key3 = {a, c, e}
+  //   SUNION key1 key2 key3 = {a, b, c, d, e}
+  Status SUnion(const std::vector<std::string>& keys,
+                std::vector<std::string>* members);
+
+  // This command is equal to SUNION, but instead of returning the resulting
+  // set, it is stored in destination.
+  // If destination already exists, it is overwritten.
+  //
+  // For example:
+  //   key1 = {a, b}
+  //   key2 = {c, d}
+  //   key3 = {c, d, e}
+  //   SUNIONSTORE destination key1 key2 key3
+  //   destination = {a, b, c, d, e}
+  Status SUnionstore(const Slice& destination,
+                     const std::vector<std::string>& keys,
+                     int32_t* ret);
 
   // Keys Commands
   enum DataType {
@@ -271,8 +378,12 @@ class BlackWidow {
     kHashes,
     kLists,
     kZSets,
-    kSetes
+    kSets
   };
+
+  // Note:
+  // While any error happens, you need to check type_status for
+  // the error message
 
   // Set a timeout on key
   // return -1 operation exception errors happen in database
@@ -292,10 +403,43 @@ class BlackWidow {
   int64_t Scan(int64_t cursor, const std::string& pattern,
                int64_t count, std::vector<std::string>* keys);
 
+  // Returns if key exists.
+  // return -1 operation exception errors happen in database
+  // return >=0 the number of keys existing
+  int64_t Exists(const std::vector<Slice>& keys,
+             std::map<DataType, Status>* type_status);
+
+  // EXPIREAT has the same effect and semantic as EXPIRE, but instead of
+  // specifying the number of seconds representing the TTL (time to live), it
+  // takes an absolute Unix timestamp (seconds since January 1, 1970). A
+  // timestamp in the past will delete the key immediately.
+  // return -1 operation exception errors happen in database
+  // return 0 if key does not exist
+  // return >=1 if the timueout was set
+  int32_t Expireat(const Slice& key, int32_t timestamp,
+                   std::map<DataType, Status>* type_status);
+
+  // Remove the existing timeout on key, turning the key from volatile (a key
+  // with an expire set) to persistent (a key that will never expire as no
+  // timeout is associated).
+  // return -1 operation exception errors happen in database
+  // return 0 if key does not exist or does not have an associated timeout
+  // return >=1 if the timueout was set
+  int32_t Persist(const Slice& key,
+                  std::map<DataType, Status>* type_status);
+
+  // Returns the remaining time to live of a key that has a timeout.
+  // return -3 operation exception errors happen in database
+  // return -2 if the key does not exist
+  // return -1 if the key exists but has not associated expire
+  // return > 0 TTL in seconds
+  std::map<DataType, int64_t> TTL(const Slice& key,
+              std::map<DataType, Status>* type_status);
+
  private:
   RedisStrings* strings_db_;
   RedisHashes* hashes_db_;
-  RedisSetes* setes_db_;
+  RedisSets* sets_db_;
 
   MutexFactory* mutex_factory_;
 

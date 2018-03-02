@@ -10,7 +10,6 @@
 #include <algorithm>
 #include <limits>
 
-#include "src/util.h"
 #include "src/strings_filter.h"
 #include "src/scope_record_lock.h"
 #include "src/scope_snapshot.h"
@@ -138,45 +137,18 @@ Status RedisStrings::GetBit(const Slice& key, int64_t offset, int32_t* ret) {
 }
 
 Status RedisStrings::MSet(const std::vector<BlackWidow::KeyValue>& kvs) {
-  std::string pre_key, cur_key;
-  std::vector<BlackWidow::KeyValue> tmp_kvs(kvs);
-  std::sort(tmp_kvs.begin(), tmp_kvs.end());
-
-  pre_key.clear();
-  if (!tmp_kvs.empty() &&
-      tmp_kvs[0].key.empty()) {
-    lock_mgr_->TryLock(pre_key);
+  std::vector<std::string> keys;
+  for (const auto& kv :  kvs) {
+    keys.push_back(kv.key);
   }
 
-  for (const auto& kv : tmp_kvs) {
-    cur_key = kv.key;
-    if (pre_key != cur_key) {
-      lock_mgr_->TryLock(cur_key);
-      pre_key = cur_key;
-    }
-  }
-
+  MultiScopeRecordLock ml(lock_mgr_, keys);
   rocksdb::WriteBatch batch;
-  for (const auto& kv : tmp_kvs) {
+  for (const auto& kv : kvs) {
     StringsValue strings_value(kv.value);
     batch.Put(kv.key, strings_value.Encode());
   }
-  Status s = db_->Write(default_write_options_, &batch);
-
-  pre_key.clear();
-  if (!tmp_kvs.empty() &&
-      tmp_kvs[0].key.empty()) {
-    lock_mgr_->UnLock(pre_key);
-  }
-
-  for (const auto& kv : tmp_kvs) {
-    cur_key = kv.key;
-    if (pre_key != cur_key) {
-      lock_mgr_->UnLock(cur_key);
-      pre_key = cur_key;
-    }
-  }
-  return s;
+  return db_->Write(default_write_options_, &batch);
 }
 
 Status RedisStrings::MGet(const std::vector<std::string>& keys,
@@ -930,6 +902,68 @@ bool RedisStrings::Scan(const std::string& start_key,
   }
   delete it;
   return is_finish;
+}
+
+Status RedisStrings::Expireat(const Slice& key, int32_t timestamp) {
+  std::string value;
+  ScopeRecordLock l(lock_mgr_, key);
+  Status s = db_->Get(default_read_options_, key, &value);
+  if (s.ok()) {
+    ParsedStringsValue parsed_strings_value(&value);
+    if (parsed_strings_value.IsStale()) {
+      return Status::NotFound("Stale");
+    } else {
+      parsed_strings_value.set_timestamp(timestamp);
+      return db_->Put(default_write_options_, key, value);
+    }
+  }
+  return s;
+}
+
+Status RedisStrings::Persist(const Slice& key) {
+  std::string value;
+  ScopeRecordLock l(lock_mgr_, key);
+  Status s = db_->Get(default_read_options_, key, &value);
+  if (s.ok()) {
+    ParsedStringsValue parsed_strings_value(&value);
+    if (parsed_strings_value.IsStale()) {
+      return Status::NotFound("Stale");
+    } else {
+      int32_t timestamp = parsed_strings_value.timestamp();
+      if (timestamp == 0) {
+        return Status::NotFound("Not have an associated timeout");
+      } else {
+        parsed_strings_value.set_timestamp(0);
+        return db_->Put(default_write_options_, key, value);
+      }
+    }
+  }
+  return s;
+}
+
+Status RedisStrings::TTL(const Slice& key, int64_t* timestamp) {
+  std::string value;
+  ScopeRecordLock l(lock_mgr_, key);
+  Status s = db_->Get(default_read_options_, key, &value);
+  if (s.ok()) {
+    ParsedStringsValue parsed_strings_value(&value);
+    if (parsed_strings_value.IsStale()) {
+      *timestamp = -2;
+      return Status::NotFound("Stale");
+    } else {
+      *timestamp = parsed_strings_value.timestamp();
+      if (*timestamp == 0) {
+        *timestamp = -1;
+      } else {
+        int64_t curtime;
+        rocksdb::Env::Default()->GetCurrentTime(&curtime);
+        *timestamp = *timestamp - curtime > 0 ? *timestamp - curtime : -1;
+      }
+    }
+  } else if (s.IsNotFound()) {
+    *timestamp = -2;
+  }
+  return s;
 }
 
 Status RedisStrings::CompactRange(const rocksdb::Slice* begin,
