@@ -939,11 +939,11 @@ Status RedisSets::Persist(const Slice& key) {
   return s;
 }
 
-Status RedisSetes::TTL(const Slice& key, int64_t* timestamp) {
+Status RedisSets::TTL(const Slice& key, int64_t* timestamp) {
   std::string meta_value;
   Status s = db_->Get(default_read_options_, handles_[0], key, &meta_value);
   if (s.ok()) {
-    ParsedSetesMetaValue parsed_setes_meta_value(&meta_value);
+    ParsedSetsMetaValue parsed_setes_meta_value(&meta_value);
     if (parsed_setes_meta_value.IsStale()) {
       *timestamp = -2;
       return Status::NotFound("Stale");

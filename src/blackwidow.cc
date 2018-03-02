@@ -547,7 +547,7 @@ int32_t BlackWidow::Persist(const Slice& key,
     (*type_status)[DataType::kHashes] = s;
   }
 
-  s = setes_db_->Persist(key);
+  s = sets_db_->Persist(key);
   if (s.ok()) {
     count++;
   } else if (!s.IsNotFound()) {
@@ -586,7 +586,7 @@ std::map<BlackWidow::DataType, int64_t> BlackWidow::TTL(const Slice& key,
     (*type_status)[DataType::kHashes] = s;
   }
 
-  s = setes_db_->TTL(key, &timestamp);
+  s = sets_db_->TTL(key, &timestamp);
   if (s.ok() || s.IsNotFound()) {
     ret[DataType::kSets] = timestamp;
   } else if (!s.IsNotFound()) {
