@@ -632,7 +632,10 @@ Status RedisHashes::Expire(const Slice& key, int32_t ttl) {
       parsed_hashes_meta_value.SetRelativeTimestamp(ttl);
       s = db_->Put(default_write_options_, handles_[0], key, meta_value);
     } else {
-      s = db_->Delete(default_write_options_, handles_[0], key);
+      parsed_hashes_meta_value.set_count(0);
+      parsed_hashes_meta_value.UpdateVersion();
+      parsed_hashes_meta_value.set_timestamp(0);
+      s = db_->Put(default_write_options_, handles_[0], key, meta_value);
     }
   }
   return s;
@@ -647,7 +650,10 @@ Status RedisHashes::Del(const Slice& key) {
     if (parsed_hashes_meta_value.IsStale()) {
       return Status::NotFound("Stale");
     } else {
-      s = db_->Delete(default_write_options_, handles_[0], key);
+      parsed_hashes_meta_value.set_count(0);
+      parsed_hashes_meta_value.UpdateVersion();
+      parsed_hashes_meta_value.set_timestamp(0);
+      s = db_->Put(default_write_options_, handles_[0], key, meta_value);
     }
   }
   return s;
