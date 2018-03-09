@@ -577,11 +577,11 @@ int32_t BlackWidow::Persist(const Slice& key,
   }
 }
 
-std::map<BlackWidow::DataType, int32_t> BlackWidow::TTL(const Slice& key,
+std::map<BlackWidow::DataType, int64_t> BlackWidow::TTL(const Slice& key,
                         std::map<DataType, Status>* type_status) {
   Status s;
-  std::map<DataType, int32_t> ret;
-  int32_t timestamp = 0;
+  std::map<DataType, int64_t> ret;
+  int64_t timestamp = 0;
 
   s = strings_db_->TTL(key, &timestamp);
   if (s.ok() || s.IsNotFound()) {

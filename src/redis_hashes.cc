@@ -21,7 +21,7 @@ RedisHashes::~RedisHashes() {
 }
 
 Status RedisHashes::Open(const rocksdb::Options& options,
-    const std::string& db_path) {
+                         const std::string& db_path) {
   rocksdb::Options ops(options);
   Status s = rocksdb::DB::Open(ops, db_path, &db_);
   if (s.ok()) {
@@ -56,7 +56,7 @@ Status RedisHashes::Open(const rocksdb::Options& options,
 }
 
 Status RedisHashes::HSet(const Slice& key, const Slice& field,
-        const Slice& value, int32_t* res) {
+                         const Slice& value, int32_t* res) {
   rocksdb::WriteBatch batch;
   rocksdb::ReadOptions read_options;
   const rocksdb::Snapshot* snapshot;
@@ -111,7 +111,7 @@ Status RedisHashes::HSet(const Slice& key, const Slice& field,
 }
 
 Status RedisHashes::HGet(const Slice& key, const Slice& field,
-    std::string* value) {
+                         std::string* value) {
   std::string meta_value;
   int32_t version = 0;
   rocksdb::ReadOptions read_options;
@@ -260,6 +260,7 @@ Status RedisHashes::HGetall(const Slice& key,
         fvs->push_back({parsed_hashes_data_key.field().ToString(),
                 iter->value().ToString()});
       }
+      delete iter;
     }
   }
   return s;
@@ -290,6 +291,7 @@ Status RedisHashes::HKeys(const Slice& key,
         ParsedHashesDataKey parsed_hashes_data_key(iter->key());
         fields->push_back(parsed_hashes_data_key.field().ToString());
       }
+      delete iter;
     }
   }
   return s;
@@ -319,6 +321,7 @@ Status RedisHashes::HVals(const Slice& key,
            iter->Next()) {
         values->push_back(iter->value().ToString());
       }
+      delete iter;
     }
   }
   return s;
@@ -739,8 +742,7 @@ Status RedisHashes::Persist(const Slice& key) {
   return s;
 }
 
-Status RedisHashes::TTL(const Slice& key,
-                       int32_t* timestamp) {
+Status RedisHashes::TTL(const Slice& key, int64_t* timestamp) {
   std::string meta_value;
   Status s = db_->Get(default_read_options_, handles_[0], key, &meta_value);
   if (s.ok()) {
@@ -752,6 +754,10 @@ Status RedisHashes::TTL(const Slice& key,
       *timestamp = parsed_hashes_meta_value.timestamp();
       if (*timestamp == 0) {
         *timestamp = -1;
+      } else {
+        int64_t curtime;
+        rocksdb::Env::Default()->GetCurrentTime(&curtime);
+        *timestamp = *timestamp - curtime > 0 ? *timestamp - curtime : -1;
       }
     }
   } else if (s.IsNotFound()) {
@@ -761,7 +767,7 @@ Status RedisHashes::TTL(const Slice& key,
 }
 
 Status RedisHashes::CompactRange(const rocksdb::Slice* begin,
-    const rocksdb::Slice* end) {
+                                 const rocksdb::Slice* end) {
   Status s = db_->CompactRange(default_compact_range_options_,
       handles_[0], begin, end);
   if (!s.ok()) {
