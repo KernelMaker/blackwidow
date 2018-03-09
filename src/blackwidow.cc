@@ -578,7 +578,7 @@ int32_t BlackWidow::Persist(const Slice& key,
 }
 
 std::map<BlackWidow::DataType, int64_t> BlackWidow::TTL(const Slice& key,
-                        std::map<DataType, Status>* type_status) {
+                        std::map<BlackWidow::DataType, Status>* type_status) {
   Status s;
   std::map<DataType, int64_t> ret;
   int64_t timestamp = 0;

@@ -139,7 +139,7 @@ Status RedisSets::SCard(const Slice& key, int32_t* ret) {
     } else {
       *ret = parsed_sets_meta_value.count();
       if (*ret == 0) {
-        // return Status::NotFound("Deleted");
+        return Status::NotFound("Deleted");
       }
     }
   }

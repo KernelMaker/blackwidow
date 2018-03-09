@@ -203,7 +203,7 @@ TEST_F(KeysTest, DelTest) {
 
   // Sets
   s = db.SCard("DEL_KEY", &ret);
-  ASSERT_EQ(ret, 0);
+  ASSERT_TRUE(s.IsNotFound());
 
   // TODO(shq) other types
 }
