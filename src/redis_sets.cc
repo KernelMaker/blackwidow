@@ -130,16 +130,15 @@ Status RedisSets::SAdd(const Slice& key,
 
 Status RedisSets::SCard(const Slice& key, int32_t* ret) {
   std::string meta_value;
+  *ret = 0;
   Status s = db_->Get(default_read_options_, handles_[0], key, &meta_value);
   if (s.ok()) {
     ParsedSetsMetaValue parsed_sets_meta_value(&meta_value);
     if (parsed_sets_meta_value.IsStale()) {
-      *ret = 0;
+      return Status::NotFound("Stale");
     } else {
       *ret = parsed_sets_meta_value.count();
     }
-  } else if (s.IsNotFound()) {
-    *ret = 0;
   }
   return s;
 }
@@ -945,10 +944,16 @@ Status RedisSets::TTL(const Slice& key, int32_t* timestamp) {
   if (s.ok()) {
     ParsedSetsMetaValue parsed_sets_meta_value(&meta_value);
     if (parsed_sets_meta_value.IsStale()) {
+      *timestamp = -2;
       return Status::NotFound("Stale");
     } else {
       *timestamp = parsed_sets_meta_value.timestamp();
+      if (*timestamp == 0) {
+        *timestamp = -1;
+      }
     }
+  } else if (s.IsNotFound()) {
+    *timestamp = -2;
   }
   return s;
 }
