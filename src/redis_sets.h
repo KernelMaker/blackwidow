@@ -11,6 +11,7 @@
 #include <unordered_set>
 
 #include "src/redis.h"
+#include "src/custom_comparator.h"
 #include "blackwidow/blackwidow.h"
 
 namespace blackwidow {
@@ -70,6 +71,7 @@ class RedisSets : public Redis {
 
  private:
   std::vector<rocksdb::ColumnFamilyHandle*> handles_;
+  SetsMemberKeyComparatorImpl sets_member_key_comparator_;
 };
 
 }  //  namespace blackwidow

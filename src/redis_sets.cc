@@ -29,8 +29,9 @@ Status RedisSets::Open(const rocksdb::Options& options,
   if (s.ok()) {
     // create column family
     rocksdb::ColumnFamilyHandle* cf;
-    s = db_->CreateColumnFamily(rocksdb::ColumnFamilyOptions(),
-        "member_cf", &cf);
+    rocksdb::ColumnFamilyOptions cfo;
+    cfo.comparator = &sets_member_key_comparator_;
+    s = db_->CreateColumnFamily(cfo, "member_cf", &cf);
     if (!s.ok()) {
       return s;
     }
@@ -47,6 +48,7 @@ Status RedisSets::Open(const rocksdb::Options& options,
       std::make_shared<SetsMetaFilterFactory>();
   member_cf_ops.compaction_filter_factory =
       std::make_shared<SetsMemberFilterFactory>(&db_, &handles_);
+  member_cf_ops.comparator = &sets_member_key_comparator_;
   std::vector<rocksdb::ColumnFamilyDescriptor> column_families;
   // Meta CF
   column_families.push_back(rocksdb::ColumnFamilyDescriptor(
@@ -743,6 +745,7 @@ Status RedisSets::SPop(const Slice& key, int32_t count,
 
 Status RedisSets::SRandmembers(const Slice& key, int32_t count,
                                std::vector<std::string>* members) {
+  return Status::OK();
 }
 
 Status RedisSets::SRem(const Slice& key,
