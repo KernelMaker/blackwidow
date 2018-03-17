@@ -26,7 +26,6 @@ Status RedisStrings::Open(const rocksdb::Options& options,
 
 Status RedisStrings::Set(const Slice& key, const Slice& value) {
   StringsValue strings_value(value);
-  ScopeRecordLock l(lock_mgr_, key);
   return db_->Put(default_write_options_, key, strings_value.Encode());
 }
 
