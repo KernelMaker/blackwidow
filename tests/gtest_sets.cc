@@ -120,7 +120,7 @@ TEST_F(SetsTest, SAddTest) {
   ASSERT_TRUE(members_match(&db, "SADD_KEY", {"a", "b"}));
 
   // Delete the key
-  std::vector<rocksdb::Slice> del_keys = {"SADD_KEY"};
+  std::vector<std::string> del_keys = {"SADD_KEY"};
   std::map<BlackWidow::DataType, blackwidow::Status> type_status;
   db.Del(del_keys, &type_status);
   ASSERT_TRUE(type_status[BlackWidow::DataType::kSets].ok());
@@ -1291,6 +1291,22 @@ TEST_F(SetsTest, SMoveTest) {
   ASSERT_TRUE(members_match(&db, "GP8_SMOVE_SOURCE", {"a", "b", "c"}));
   ASSERT_TRUE(size_match(&db, "GP8_SMOVE_DESTINATION", 3));
   ASSERT_TRUE(members_match(&db, "GP8_SMOVE_DESTINATION", {"a", "c", "d"}));
+
+  // ***************** Group 9 Test *****************
+  // source = {a, b, c, d}
+  // SMove source source d
+  // source = {a, b, c, d}
+  std::vector<std::string> gp9_source {"a", "b", "c", "d"};
+  s = db.SAdd("GP9_SMOVE_SOURCE", gp8_source, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 4);
+
+  s = db.SMove("GP9_SMOVE_SOURCE", "GP9_SMOVE_SOURCE", "d", &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 1);
+
+  ASSERT_TRUE(size_match(&db, "GP9_SMOVE_SOURCE", 4));
+  ASSERT_TRUE(members_match(&db, "GP9_SMOVE_SOURCE", {"a", "b", "c", "d"}));
 }
 
 // SPop
