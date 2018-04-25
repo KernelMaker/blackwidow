@@ -533,7 +533,29 @@ Status RedisLists::LRem(const Slice& key, int64_t count, const Slice& value) {
 }
 
 Status RedisLists::LSet(const Slice& key, int64_t index, const Slice& value) {
-  Status s;
+  ScopeRecordLock l(lock_mgr_, key);
+  std::string meta_value;
+  Status s = db_->Get(default_read_options_, handles_[0], key, &meta_value);
+  if (s.ok()) {
+    ParsedListsMetaValue parsed_lists_meta_value(&meta_value);
+    if (parsed_lists_meta_value.IsStale()) {
+      return Status::NotFound("Stale");
+    } else if (parsed_lists_meta_value.count() == 0) {
+      return Status::NotFound();
+    } else {
+      uint32_t version = parsed_lists_meta_value.version();
+      uint64_t target_index = index >= 0 ?
+        parsed_lists_meta_value.left_index() + index + 1
+        : parsed_lists_meta_value.right_index() + index;
+      if (target_index <= parsed_lists_meta_value.left_index()
+        || target_index >= parsed_lists_meta_value.right_index()) {
+        return Status::NotFound();
+      }
+      ListsDataKey lists_data_key(key, version, target_index);
+      return db_->Put(default_write_options_, handles_[1],
+                      lists_data_key.Encode(), value);
+    }
+  }
   return s;
 }
 

@@ -1168,6 +1168,107 @@ TEST_F(ListsTest, RPushxTest) {
   ASSERT_TRUE(elements_match(&db, "GP4_RPUSHX_KEY", {}));
 }
 
+// LSet
+TEST_F(ListsTest, LSetTest) {
+  int64_t ret;
+  uint64_t num;
+
+  // ***************** Group 1 Test *****************
+  //  "o" -> "o" -> "o" -> "o" -> "o"
+  //   0      1      2      3      4
+  //  -5     -4     -3     -2     -1
+  std::vector<std::string> gp1_nodes1 {"o", "o", "o", "o", "o"};
+  s = db.LPush("GP1_LSET_KEY", gp1_nodes1, &num);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(gp1_nodes1.size(), num);
+  ASSERT_TRUE(len_match(&db, "GP1_LSET_KEY", gp1_nodes1.size()));
+  ASSERT_TRUE(elements_match(&db, "GP1_LSET_KEY", {"o", "o", "o", "o", "o"}));
+
+  s = db.LSet("GP1_LSET_KEY", 0, "x");
+  ASSERT_TRUE(s.ok());
+  ASSERT_TRUE(elements_match(&db, "GP1_LSET_KEY", {"x", "o", "o", "o", "o"}));
+
+  s = db.LSet("GP1_LSET_KEY", -3, "x");
+  ASSERT_TRUE(s.ok());
+  ASSERT_TRUE(elements_match(&db, "GP1_LSET_KEY", {"x", "o", "x", "o", "o"}));
+
+  s = db.LSet("GP1_LSET_KEY", 5, "x");
+  ASSERT_TRUE(s.IsNotFound());
+  ASSERT_TRUE(elements_match(&db, "GP1_LSET_KEY", {"x", "o", "x", "o", "o"}));
+
+  s = db.LSet("GP1_LSET_KEY", -100, "x");
+  ASSERT_TRUE(s.IsNotFound());
+  ASSERT_TRUE(elements_match(&db, "GP1_LSET_KEY", {"x", "o", "x", "o", "o"}));
+
+  s = db.LSet("GP1_LSET_KEY", 0, "o");
+  ASSERT_TRUE(s.ok());
+  ASSERT_TRUE(elements_match(&db, "GP1_LSET_KEY", {"o", "o", "x", "o", "o"}));
+
+  s = db.LSet("GP1_LSET_KEY", -1, "x");
+  ASSERT_TRUE(s.ok());
+  ASSERT_TRUE(elements_match(&db, "GP1_LSET_KEY", {"o", "o", "x", "o", "x"}));
+
+
+  //  "o" -> "o" -> "x" -> "o" -> "x" -> "o" -> "o"
+  //   0      1      2      3      4      5      6
+  //   -7    -6     -5     -4     -3     -2     -1
+  std::vector<std::string> gp1_nodes2 {"o", "o"};
+  s = db.RPush("GP1_LSET_KEY", gp1_nodes2, &num);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(gp1_nodes1.size() + gp1_nodes2.size(), num);
+  ASSERT_TRUE(len_match(&db, "GP1_LSET_KEY", gp1_nodes1.size() + gp1_nodes2.size()));
+  ASSERT_TRUE(elements_match(&db, "GP1_LSET_KEY", {"o", "o", "x", "o", "x", "o", "o"}));
+
+  s = db.LSet("GP1_LSET_KEY", -2, "x");
+  ASSERT_TRUE(s.ok());
+  ASSERT_TRUE(elements_match(&db, "GP1_LSET_KEY", {"o", "o", "x", "o", "x", "x", "o"}));
+
+  s = db.LSet("GP1_LSET_KEY", -7, "x");
+  ASSERT_TRUE(s.ok());
+  ASSERT_TRUE(elements_match(&db, "GP1_LSET_KEY", {"x", "o", "x", "o", "x", "x", "o"}));
+
+
+  // ***************** Group 2 Test *****************
+  // LSet expire key
+  std::vector<std::string> gp2_nodes {"o", "o", "o"};
+  s = db.LPush("GP2_LSET_KEY", gp2_nodes, &num);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(gp2_nodes.size(), num);
+  ASSERT_TRUE(len_match(&db, "GP2_LSET_KEY", gp2_nodes.size()));
+  ASSERT_TRUE(elements_match(&db, "GP2_LSET_KEY", {"o", "o", "o"}));
+  ASSERT_TRUE(make_expired(&db, "GP2_LSET_KEY"));
+
+  s = db.LSet("GP2_LSET_KEY", 0, "x");
+  ASSERT_TRUE(s.IsNotFound());
+
+
+  // ***************** Group 3 Test *****************
+  // LSet not exist key
+  s = db.LSet("GP3_LSET_KEY", 0, "x");
+  ASSERT_TRUE(s.IsNotFound());
+
+
+  // ***************** Group 4 Test *****************
+  std::vector<std::string> gp4_nodes {"o"};
+  s = db.LPush("GP4_LSET_KEY", gp4_nodes, &num);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(gp4_nodes.size(), num);
+  ASSERT_TRUE(len_match(&db, "GP4_LSET_KEY", gp4_nodes.size()));
+  ASSERT_TRUE(elements_match(&db, "GP4_LSET_KEY", {"o"}));
+
+  s = db.LSet("GP4_LSET_KEY", 0, "x");
+  ASSERT_TRUE(s.ok());
+  ASSERT_TRUE(elements_match(&db, "GP4_LSET_KEY", {"x"}));
+
+  s = db.LSet("GP4_LSET_KEY", -1, "o");
+  ASSERT_TRUE(s.ok());
+  ASSERT_TRUE(elements_match(&db, "GP4_LSET_KEY", {"o"}));
+
+  s = db.LSet("GP4_LSET_KEY", -2, "x");
+  ASSERT_TRUE(s.IsNotFound());
+  ASSERT_TRUE(elements_match(&db, "GP4_LSET_KEY", {"o"}));
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
