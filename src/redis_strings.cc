@@ -24,6 +24,11 @@ Status RedisStrings::Open(const rocksdb::Options& options,
   return rocksdb::DB::Open(ops, db_path, &db_);
 }
 
+Status RedisStrings::CompactRange(const rocksdb::Slice* begin,
+    const rocksdb::Slice* end) {
+  return db_->CompactRange(default_compact_range_options_, begin, end);
+}
+
 Status RedisStrings::Set(const Slice& key, const Slice& value) {
   StringsValue strings_value(value);
   ScopeRecordLock l(lock_mgr_, key);
@@ -964,11 +969,6 @@ Status RedisStrings::TTL(const Slice& key, int64_t* timestamp) {
     *timestamp = -2;
   }
   return s;
-}
-
-Status RedisStrings::CompactRange(const rocksdb::Slice* begin,
-    const rocksdb::Slice* end) {
-  return db_->CompactRange(default_compact_range_options_, begin, end);
 }
 
 }  //  namespace blackwidow
