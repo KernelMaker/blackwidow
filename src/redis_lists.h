@@ -29,24 +29,24 @@ class RedisLists : public Redis {
 
 
     // Lists commands;
-    Status LPush(const Slice& key, const std::vector<std::string>& values,
-                 uint64_t* ret);
-    Status RPush(const Slice& key, const std::vector<std::string>& values,
-                 uint64_t* ret);
-    Status LRange(const Slice& key, int64_t start, int64_t stop,
-                  std::vector<std::string>* ret);
-    Status LTrim(const Slice& key, int64_t start, int64_t stop);
-    Status LLen(const Slice& key, uint64_t* len);
-    Status LPop(const Slice& key, std::string* element);
-    Status RPop(const Slice& key, std::string* element);
     Status LIndex(const Slice& key, int64_t index, std::string* element);
     Status LInsert(const Slice& key, const BlackWidow::BeforeOrAfter& before_or_after,
                    const std::string& pivot, const std::string& value, int64_t* ret);
+    Status LLen(const Slice& key, uint64_t* len);
+    Status LPop(const Slice& key, std::string* element);
+    Status LPush(const Slice& key, const std::vector<std::string>& values,
+                 uint64_t* ret);
     Status LPushx(const Slice& key, const Slice& value, uint64_t* len);
-    Status RPushx(const Slice& key, const Slice& value, uint64_t* len);
+    Status LRange(const Slice& key, int64_t start, int64_t stop,
+                  std::vector<std::string>* ret);
     Status LRem(const Slice& key, int64_t count, const Slice& value, uint64_t* ret);
     Status LSet(const Slice& key, int64_t index, const Slice& value);
+    Status LTrim(const Slice& key, int64_t start, int64_t stop);
+    Status RPop(const Slice& key, std::string* element);
     Status RPoplpush(const Slice& source, const Slice& destination, std::string* element);
+    Status RPush(const Slice& key, const std::vector<std::string>& values,
+                 uint64_t* ret);
+    Status RPushx(const Slice& key, const Slice& value, uint64_t* len);
 
     // Keys Commands
     virtual Status Expire(const Slice& key, int32_t ttl) override;
