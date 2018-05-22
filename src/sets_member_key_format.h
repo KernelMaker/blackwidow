@@ -47,7 +47,6 @@ class SetsMemberKey {
     char* start_;
     Slice key_;
     int32_t version_;
-    uint32_t serial_num_;
     Slice member_;
 };
 
