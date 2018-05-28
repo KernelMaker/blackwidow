@@ -143,6 +143,10 @@ Status BlackWidow::Set(const Slice& key, const Slice& value) {
   return strings_db_->Set(key, value);
 }
 
+Status BlackWidow::Setxx(const Slice& key, const Slice& value, int32_t* ret) {
+  return strings_db_->Setxx(key, value, ret);
+}
+
 Status BlackWidow::Get(const Slice& key, std::string* value) {
   return strings_db_->Get(key, value);
 }
