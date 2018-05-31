@@ -33,6 +33,8 @@ class RedisZSets : public Redis {
     Status ZCount(const Slice& key,
                   double min,
                   double max,
+                  bool left_close,
+                  bool right_close,
                   int32_t* ret);
     Status ZIncrby(const Slice& key,
                    const Slice& member,

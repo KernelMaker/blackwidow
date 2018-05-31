@@ -198,6 +198,8 @@ Status RedisZSets::ZCard(const Slice& key, int32_t* card) {
 Status RedisZSets::ZCount(const Slice& key,
                           double min,
                           double max,
+                          bool left_close,
+                          bool right_close,
                           int32_t* ret) {
   *ret = 0;
   rocksdb::ReadOptions read_options;
@@ -225,11 +227,20 @@ Status RedisZSets::ZCount(const Slice& key,
       for (iter->Seek(zsets_score_key.Encode());
            iter->Valid() && cur_index <= stop_index;
            iter->Next(), ++cur_index) {
+          bool left_pass = false;
+          bool right_pass = false;
           ParsedZSetsScoreKey parsed_zsets_score_key(iter->key());
-          if (min <= parsed_zsets_score_key.score()
-            && parsed_zsets_score_key.score() <= max) {
+          if ((left_close && min <= parsed_zsets_score_key.score())
+            || (!left_close && min < parsed_zsets_score_key.score())) {
+            left_pass = true;
+          }
+          if ((right_close && parsed_zsets_score_key.score() <= max)
+            || (!right_close && parsed_zsets_score_key.score() < max)) {
+            right_pass = true;
+          }
+          if (left_pass && right_pass) {
             cnt++;
-          } else if (parsed_zsets_score_key.score() >= max) {
+          } else if (!right_pass) {
             break;
           }
       }

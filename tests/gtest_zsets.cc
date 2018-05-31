@@ -418,29 +418,57 @@ TEST_F(ZSetsTest, ZCountTest) {
                                                           {-100.000000001, "MM3"}, {-100.000000001, "MM5"},
                                                           {101010.0101010, "MM2"}, {101010.1010101, "MM1"}}));
 
-  s = db.ZCount("GP1_ZCOUNT_KEY", -100.000000002, 101010.1010101, &ret);
+  s = db.ZCount("GP1_ZCOUNT_KEY", -100.000000002, 101010.1010101, true, true, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(ret, 6);
 
-  s = db.ZCount("GP1_ZCOUNT_KEY", -100000000, 100000000, &ret);
+  s = db.ZCount("GP1_ZCOUNT_KEY", -100.000000002, 101010.1010101, false, true, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 4);
+
+  s = db.ZCount("GP1_ZCOUNT_KEY", -100.000000002, 101010.1010101, true, false, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 5);
+
+  s = db.ZCount("GP1_ZCOUNT_KEY", -100.000000002, 101010.1010101, false, false, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 3);
+
+  s = db.ZCount("GP1_ZCOUNT_KEY", -100000000, 100000000, true, true, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(ret, 6);
 
-  s = db.ZCount("GP1_ZCOUNT_KEY", -100.000000002, -100.000000002, &ret);
+  s = db.ZCount("GP1_ZCOUNT_KEY", -100000000, 100000000, false, false, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 6);
+
+  s = db.ZCount("GP1_ZCOUNT_KEY", -100.000000002, -100.000000002, true, true, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(ret, 2);
 
-  s = db.ZCount("GP1_ZCOUNT_KEY", -100.000000001, -100.000000001, &ret);
+  s = db.ZCount("GP1_ZCOUNT_KEY", -100.000000002, -100.000000002, false, true, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 0);
+
+  s = db.ZCount("GP1_ZCOUNT_KEY", -100.000000002, -100.000000002, true, false, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 0);
+
+  s = db.ZCount("GP1_ZCOUNT_KEY", -100.000000001, -100.000000001, true, true, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(ret, 2);
 
-  s = db.ZCount("GP1_ZCOUNT_KEY", -100000000, 100, &ret);
+  s = db.ZCount("GP1_ZCOUNT_KEY", -100000000, 100, true, true, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(ret, 4);
 
-  s = db.ZCount("GP1_ZCOUNT_KEY", -100.000000001, 100000000, &ret);
+  s = db.ZCount("GP1_ZCOUNT_KEY", -100.000000001, 100000000, true, true, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(ret, 4);
+
+  s = db.ZCount("GP1_ZCOUNT_KEY", -100.000000001, 100000000, false, true, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 2);
 
 
   // ***************** Group 2 Test *****************
@@ -455,13 +483,13 @@ TEST_F(ZSetsTest, ZCountTest) {
                                                           {3, "MM3"}, {4, "MM4"}, {5, "MM5"},
                                                           {6, "MM6"}, {7, "MM7"}, {8, "MM8"}}));
   ASSERT_TRUE(make_expired(&db, "GP2_ZCOUNT_KEY"));
-  s = db.ZCount("GP2_ZCOUNT_KEY", -100000000, 100000000, &ret);
+  s = db.ZCount("GP2_ZCOUNT_KEY", -100000000, 100000000, true, true, &ret);
   ASSERT_TRUE(s.IsNotFound());
   ASSERT_EQ(ret, 0);
 
 
   // ***************** Group 3 Test *****************
-  s = db.ZCount("GP3_ZCOUNT_KEY", -100000000, 100000000, &ret);
+  s = db.ZCount("GP3_ZCOUNT_KEY", -100000000, 100000000, true, true, &ret);
   ASSERT_TRUE(s.IsNotFound());
   ASSERT_EQ(ret, 0);
 
@@ -478,41 +506,89 @@ TEST_F(ZSetsTest, ZCountTest) {
                                                           {3, "MM3"}, {4, "MM4"}, {5, "MM5"},
                                                           {6, "MM6"}, {7, "MM7"}, {8, "MM8"}}));
 
-  s = db.ZCount("GP4_ZCOUNT_KEY", -100, -50, &ret);
+  s = db.ZCount("GP4_ZCOUNT_KEY", -100, -50, true, true, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(ret, 0);
 
-  s = db.ZCount("GP4_ZCOUNT_KEY", -100, 0, &ret);
+  s = db.ZCount("GP4_ZCOUNT_KEY", -100, 0, true, true, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(ret, 1);
 
-  s = db.ZCount("GP4_ZCOUNT_KEY", -100, 4, &ret);
+  s = db.ZCount("GP4_ZCOUNT_KEY", -100, 0, true, false, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 0);
+
+  s = db.ZCount("GP4_ZCOUNT_KEY", -100, 4, true, true, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(ret, 5);
 
-  s = db.ZCount("GP4_ZCOUNT_KEY", 0, 8, &ret);
+  s = db.ZCount("GP4_ZCOUNT_KEY", -100, 4, true, false, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 4);
+
+  s = db.ZCount("GP4_ZCOUNT_KEY", 0, 8, true, true, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(ret, 9);
 
-  s = db.ZCount("GP4_ZCOUNT_KEY", 3, 5, &ret);
+  s = db.ZCount("GP4_ZCOUNT_KEY", 0, 8, false, true, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 8);
+
+  s = db.ZCount("GP4_ZCOUNT_KEY", 0, 8, true, false, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 8);
+
+  s = db.ZCount("GP4_ZCOUNT_KEY", 0, 8, false, false, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 7);
+
+  s = db.ZCount("GP4_ZCOUNT_KEY", 3, 5, true, true, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(ret, 3);
 
-  s = db.ZCount("GP4_ZCOUNT_KEY", 100, 100, &ret);
+  s = db.ZCount("GP4_ZCOUNT_KEY", 3, 5, false, true, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 2);
+
+  s = db.ZCount("GP4_ZCOUNT_KEY", 3, 5, true, false, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 2);
+
+  s = db.ZCount("GP4_ZCOUNT_KEY", 3, 5, false, false, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 1);
+
+  s = db.ZCount("GP4_ZCOUNT_KEY", 100, 100, true, true, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(ret, 0);
 
-  s = db.ZCount("GP4_ZCOUNT_KEY", 0, 0, &ret);
+  s = db.ZCount("GP4_ZCOUNT_KEY", 0, 0, true, true, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(ret, 1);
 
-  s = db.ZCount("GP4_ZCOUNT_KEY", 8, 8, &ret);
+  s = db.ZCount("GP4_ZCOUNT_KEY", 0, 0, false, true, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 0);
+
+  s = db.ZCount("GP4_ZCOUNT_KEY", 8, 8, true, true, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(ret, 1);
 
-  s = db.ZCount("GP4_ZCOUNT_KEY", 7, 8, &ret);
+  s = db.ZCount("GP4_ZCOUNT_KEY", 7, 8, true, true, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(ret, 2);
+
+  s = db.ZCount("GP4_ZCOUNT_KEY", 7, 8, false, true, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 1);
+
+  s = db.ZCount("GP4_ZCOUNT_KEY", 7, 8, true, false, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 1);
+
+  s = db.ZCount("GP4_ZCOUNT_KEY", 7, 8, false, false, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(ret, 0);
 }
 
 // ZIncrby

@@ -16,6 +16,10 @@
 #include "rocksdb/slice.h"
 
 namespace blackwidow {
+
+const int64_t ZSET_SCORE_MAX = std::numeric_limits<double>::max();
+const int64_t ZSET_SCORE_MIN = std::numeric_limits<double>::lowest();
+
 using Options = rocksdb::Options;
 using Status = rocksdb::Status;
 using Slice = rocksdb::Slice;
@@ -539,6 +543,8 @@ class BlackWidow {
   Status ZCount(const Slice& key,
                 double min,
                 double max,
+                bool left_close,
+                bool right_close,
                 int32_t* ret);
 
   // Increments the score of member in the sorted set stored at key by

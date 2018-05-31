@@ -474,8 +474,10 @@ Status BlackWidow::ZCard(const Slice& key,
 Status BlackWidow::ZCount(const Slice& key,
                           double min,
                           double max,
+                          bool left_close,
+                          bool right_close,
                           int32_t* ret) {
-  return zsets_db_->ZCount(key, min, max, ret);
+  return zsets_db_->ZCount(key, min, max, left_close, right_close, ret);
 }
 
 Status BlackWidow::ZIncrby(const Slice& key,
