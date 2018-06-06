@@ -63,6 +63,8 @@ class RedisZSets : public Redis {
     Status ZRemrangebyscore(const Slice& key,
                             double min,
                             double max,
+                            bool left_close,
+                            bool right_close,
                             int32_t* ret);
     Status ZRevrange(const Slice& key,
                      int32_t start,

@@ -671,6 +671,8 @@ class BlackWidow {
   Status ZRemrangebyscore(const Slice& key,
                           double min,
                           double max,
+                          bool left_close,
+                          bool right_close,
                           int32_t* ret);
 
   // Returns the specified range of elements in the sorted set stored at key.

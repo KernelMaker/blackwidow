@@ -1892,7 +1892,7 @@ TEST_F(ZSetsTest, ZRemrangebyscoreTest) {
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(18, ret);
 
-  s = db.ZRemrangebyscore("GP1_ZREMRANGEBYSCORE_KEY", std::numeric_limits<double>::lowest(), std::numeric_limits<double>::max(), &ret);
+  s = db.ZRemrangebyscore("GP1_ZREMRANGEBYSCORE_KEY", std::numeric_limits<double>::lowest(), std::numeric_limits<double>::max(), true, true, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(18, ret);
   ASSERT_TRUE(size_match(&db, "GP1_ZREMRANGEBYSCORE_KEY", 0));
@@ -1910,7 +1910,7 @@ TEST_F(ZSetsTest, ZRemrangebyscoreTest) {
   s = db.ZAdd("GP2_ZREMRANGEBYSCORE_KEY", gp2_sm, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(18, ret);
-  s = db.ZRemrangebyscore("GP2_ZREMRANGEBYSCORE_KEY", -10000000000, -999999999, &ret);
+  s = db.ZRemrangebyscore("GP2_ZREMRANGEBYSCORE_KEY", -10000000000, -999999999, true, true, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(0, ret);
   ASSERT_TRUE(size_match(&db, "GP2_ZREMRANGEBYSCORE_KEY", 18));
@@ -1933,7 +1933,7 @@ TEST_F(ZSetsTest, ZRemrangebyscoreTest) {
   s = db.ZAdd("GP3_ZREMRANGEBYSCORE_KEY", gp3_sm, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(18, ret);
-  s = db.ZRemrangebyscore("GP3_ZREMRANGEBYSCORE_KEY",-987654321.0000001, -7654321.000000001, &ret);
+  s = db.ZRemrangebyscore("GP3_ZREMRANGEBYSCORE_KEY",-987654321.0000001, -7654321.000000001, true, true, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(3, ret);
   ASSERT_TRUE(size_match(&db, "GP3_ZREMRANGEBYSCORE_KEY", 15));
@@ -1955,7 +1955,7 @@ TEST_F(ZSetsTest, ZRemrangebyscoreTest) {
   s = db.ZAdd("GP4_ZREMRANGEBYSCORE_KEY", gp4_sm, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(18, ret);
-  s = db.ZRemrangebyscore("GP4_ZREMRANGEBYSCORE_KEY",-999999999, -4321.000000000001, &ret);
+  s = db.ZRemrangebyscore("GP4_ZREMRANGEBYSCORE_KEY",-999999999, -4321.000000000001, true, true, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(6, ret);
   ASSERT_TRUE(size_match(&db, "GP4_ZREMRANGEBYSCORE_KEY", 12));
@@ -1976,7 +1976,7 @@ TEST_F(ZSetsTest, ZRemrangebyscoreTest) {
   s = db.ZAdd("GP5_ZREMRANGEBYSCORE_KEY", gp5_sm, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(18, ret);
-  s = db.ZRemrangebyscore("GP5_ZREMRANGEBYSCORE_KEY", -1000.000000000001, -1000.000000000001, &ret);
+  s = db.ZRemrangebyscore("GP5_ZREMRANGEBYSCORE_KEY", -1000.000000000001, -1000.000000000001, true, true, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(3, ret);
   ASSERT_TRUE(size_match(&db, "GP5_ZREMRANGEBYSCORE_KEY", 15));
@@ -1998,7 +1998,7 @@ TEST_F(ZSetsTest, ZRemrangebyscoreTest) {
   s = db.ZAdd("GP6_ZREMRANGEBYSCORE_KEY", gp6_sm, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(18, ret);
-  s = db.ZRemrangebyscore("GP6_ZREMRANGEBYSCORE_KEY", -100.0000000000001, 100.0000000000001, &ret);
+  s = db.ZRemrangebyscore("GP6_ZREMRANGEBYSCORE_KEY", -100.0000000000001, 100.0000000000001, true, true, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(3, ret);
   ASSERT_TRUE(size_match(&db, "GP6_ZREMRANGEBYSCORE_KEY", 15));
@@ -2020,7 +2020,7 @@ TEST_F(ZSetsTest, ZRemrangebyscoreTest) {
   s = db.ZAdd("GP7_ZREMRANGEBYSCORE_KEY", gp7_sm, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(18, ret);
-  s = db.ZRemrangebyscore("GP7_ZREMRANGEBYSCORE_KEY", 0, 0, &ret);
+  s = db.ZRemrangebyscore("GP7_ZREMRANGEBYSCORE_KEY", 0, 0, true, true, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(1, ret);
   ASSERT_TRUE(size_match(&db, "GP7_ZREMRANGEBYSCORE_KEY", 17));
@@ -2043,7 +2043,7 @@ TEST_F(ZSetsTest, ZRemrangebyscoreTest) {
   s = db.ZAdd("GP8_ZREMRANGEBYSCORE_KEY", gp8_sm, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(18, ret);
-  s = db.ZRemrangebyscore("GP8_ZREMRANGEBYSCORE_KEY", 4321.000000000001, 654321.0000000001, &ret);
+  s = db.ZRemrangebyscore("GP8_ZREMRANGEBYSCORE_KEY", 4321.000000000001, 654321.0000000001, true, true, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(3, ret);
   ASSERT_TRUE(size_match(&db, "GP8_ZREMRANGEBYSCORE_KEY", 15));
@@ -2065,7 +2065,7 @@ TEST_F(ZSetsTest, ZRemrangebyscoreTest) {
   s = db.ZAdd("GP9_ZREMRANGEBYSCORE_KEY", gp9_sm, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(18, ret);
-  s = db.ZRemrangebyscore("GP9_ZREMRANGEBYSCORE_KEY", 4321.000000000001, 987654321.0000001, &ret);
+  s = db.ZRemrangebyscore("GP9_ZREMRANGEBYSCORE_KEY", 4321.000000000001, 987654321.0000001, true, true, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(6, ret);
   ASSERT_TRUE(size_match(&db, "GP9_ZREMRANGEBYSCORE_KEY", 12));
@@ -2086,7 +2086,7 @@ TEST_F(ZSetsTest, ZRemrangebyscoreTest) {
   s = db.ZAdd("GP10_ZREMRANGEBYSCORE_KEY", gp10_sm, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(18, ret);
-  s = db.ZRemrangebyscore("GP10_ZREMRANGEBYSCORE_KEY", 987654321.0000001, 987654321.0000001, &ret);
+  s = db.ZRemrangebyscore("GP10_ZREMRANGEBYSCORE_KEY", 987654321.0000001, 987654321.0000001, true, true, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(1, ret);
   ASSERT_TRUE(size_match(&db, "GP10_ZREMRANGEBYSCORE_KEY", 17));
@@ -2111,7 +2111,7 @@ TEST_F(ZSetsTest, ZRemrangebyscoreTest) {
   ASSERT_EQ(18, ret);
   ASSERT_TRUE(make_expired(&db, "GP11_ZREMRANGEBYSCORE_KEY"));
 
-  s = db.ZRemrangebyscore("GP11_ZREMRANGEBYSCORE_KEY", std::numeric_limits<double>::lowest(), std::numeric_limits<double>::max(), &ret);
+  s = db.ZRemrangebyscore("GP11_ZREMRANGEBYSCORE_KEY", std::numeric_limits<double>::lowest(), std::numeric_limits<double>::max(), true, true, &ret);
   ASSERT_TRUE(s.IsNotFound());
   ASSERT_EQ(0, ret);
   ASSERT_TRUE(size_match(&db, "GP11_ZREMRANGEBYSCORE_KEY", 0));
@@ -2119,7 +2119,7 @@ TEST_F(ZSetsTest, ZRemrangebyscoreTest) {
 
 
   // ***************** Group 12 Test *****************
-  s = db.ZRemrangebyscore("GP12_ZREMRANGEBYSCORE_KEY", std::numeric_limits<double>::lowest(), std::numeric_limits<double>::max(), &ret);
+  s = db.ZRemrangebyscore("GP12_ZREMRANGEBYSCORE_KEY", std::numeric_limits<double>::lowest(), std::numeric_limits<double>::max(), true, true, &ret);
   ASSERT_TRUE(s.IsNotFound());
   ASSERT_EQ(0, ret);
   ASSERT_TRUE(size_match(&db, "GP12_ZREMRANGEBYSCORE_KEY", 0));
@@ -2132,11 +2132,78 @@ TEST_F(ZSetsTest, ZRemrangebyscoreTest) {
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(1, ret);
 
-  s = db.ZRemrangebyscore("GP13_ZREMRANGEBYSCORE_KEY", -1, 1, &ret); 
+  s = db.ZRemrangebyscore("GP13_ZREMRANGEBYSCORE_KEY", -1, 1, true, true, &ret);
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(1, ret);
   ASSERT_TRUE(size_match(&db, "GP13_ZREMRANGEBYSCORE_KEY", 0));
   ASSERT_TRUE(score_members_match(&db, "GP13_ZREMRANGEBYSCORE_KEY", {}));
+
+
+  // ***************** Group 14 Test *****************
+  std::vector<BlackWidow::ScoreMember> gp14_sm {{-987654321.0000001, "MM1" }, {-87654321.00000001, "MM2" }, {-7654321.000000001, "MM3" },
+                                                {-654321.0000000001, "MM4" }, {-54321.00000000001, "MM5" }, {-4321.000000000001, "MM6" },
+                                                {-1000.000000000001, "MM7" }, {-1000.000000000001, "MM8" }, {-1000.000000000001, "MM9" },
+                                                {-100.0000000000001, "MM10"}, { 0,                 "MM11"}, { 100.0000000000001, "MM12"},
+                                                { 4321.000000000001, "MM13"}, { 54321.00000000001, "MM14"}, { 654321.0000000001, "MM15"},
+                                                { 7654321.000000001, "MM16"}, { 87654321.00000001, "MM17"}, { 987654321.0000001, "MM18"}};
+
+  s = db.ZAdd("GP14_ZREMRANGEBYSCORE_KEY", gp14_sm, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(18, ret);
+  s = db.ZRemrangebyscore("GP14_ZREMRANGEBYSCORE_KEY",-987654321.0000001, -7654321.000000001, false, false, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(1, ret);
+  ASSERT_TRUE(size_match(&db, "GP14_ZREMRANGEBYSCORE_KEY", 17));
+  ASSERT_TRUE(score_members_match(&db, "GP14_ZREMRANGEBYSCORE_KEY",{{-987654321.0000001, "MM1" },                               {-7654321.000000001, "MM3" },
+                                                                    {-654321.0000000001, "MM4" }, {-54321.00000000001, "MM5" }, {-4321.000000000001, "MM6" },
+                                                                    {-1000.000000000001, "MM7" }, {-1000.000000000001, "MM8" }, {-1000.000000000001, "MM9" },
+                                                                    {-100.0000000000001, "MM10"}, { 0,                 "MM11"}, { 100.0000000000001, "MM12"},
+                                                                    { 4321.000000000001, "MM13"}, { 54321.00000000001, "MM14"}, { 654321.0000000001, "MM15"},
+                                                                    { 7654321.000000001, "MM16"}, { 87654321.00000001, "MM17"}, { 987654321.0000001, "MM18"}}));
+
+  // ***************** Group 15 Test *****************
+  std::vector<BlackWidow::ScoreMember> gp15_sm {{-987654321.0000001, "MM1" }, {-87654321.00000001, "MM2" }, {-7654321.000000001, "MM3" },
+                                                {-654321.0000000001, "MM4" }, {-54321.00000000001, "MM5" }, {-4321.000000000001, "MM6" },
+                                                {-1000.000000000001, "MM7" }, {-1000.000000000001, "MM8" }, {-1000.000000000001, "MM9" },
+                                                {-100.0000000000001, "MM10"}, { 0,                 "MM11"}, { 100.0000000000001, "MM12"},
+                                                { 4321.000000000001, "MM13"}, { 54321.00000000001, "MM14"}, { 654321.0000000001, "MM15"},
+                                                { 7654321.000000001, "MM16"}, { 87654321.00000001, "MM17"}, { 987654321.0000001, "MM18"}};
+
+  s = db.ZAdd("GP15_ZREMRANGEBYSCORE_KEY", gp15_sm, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(18, ret);
+  s = db.ZRemrangebyscore("GP15_ZREMRANGEBYSCORE_KEY",-987654321.0000001, -7654321.000000001, true, false, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(2, ret);
+  ASSERT_TRUE(size_match(&db, "GP15_ZREMRANGEBYSCORE_KEY", 16));
+  ASSERT_TRUE(score_members_match(&db, "GP15_ZREMRANGEBYSCORE_KEY", {                                                           {-7654321.000000001, "MM3" },
+                                                                    {-654321.0000000001, "MM4" }, {-54321.00000000001, "MM5" }, {-4321.000000000001, "MM6" },
+                                                                    {-1000.000000000001, "MM7" }, {-1000.000000000001, "MM8" }, {-1000.000000000001, "MM9" },
+                                                                    {-100.0000000000001, "MM10"}, { 0,                 "MM11"}, { 100.0000000000001, "MM12"},
+                                                                    { 4321.000000000001, "MM13"}, { 54321.00000000001, "MM14"}, { 654321.0000000001, "MM15"},
+                                                                    { 7654321.000000001, "MM16"}, { 87654321.00000001, "MM17"}, { 987654321.0000001, "MM18"}}));
+
+  // ***************** Group 16 Test *****************
+  std::vector<BlackWidow::ScoreMember> gp16_sm {{-987654321.0000001, "MM1" }, {-87654321.00000001, "MM2" }, {-7654321.000000001, "MM3" },
+                                                {-654321.0000000001, "MM4" }, {-54321.00000000001, "MM5" }, {-4321.000000000001, "MM6" },
+                                                {-1000.000000000001, "MM7" }, {-1000.000000000001, "MM8" }, {-1000.000000000001, "MM9" },
+                                                {-100.0000000000001, "MM10"}, { 0,                 "MM11"}, { 100.0000000000001, "MM12"},
+                                                { 4321.000000000001, "MM13"}, { 54321.00000000001, "MM14"}, { 654321.0000000001, "MM15"},
+                                                { 7654321.000000001, "MM16"}, { 87654321.00000001, "MM17"}, { 987654321.0000001, "MM18"}};
+
+  s = db.ZAdd("GP16_ZREMRANGEBYSCORE_KEY", gp16_sm, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(18, ret);
+  s = db.ZRemrangebyscore("GP16_ZREMRANGEBYSCORE_KEY",-987654321.0000001, -7654321.000000001, false, true, &ret);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(2, ret);
+  ASSERT_TRUE(size_match(&db, "GP16_ZREMRANGEBYSCORE_KEY", 16));
+  ASSERT_TRUE(score_members_match(&db, "GP16_ZREMRANGEBYSCORE_KEY",{{-987654321.0000001, "MM1" },
+                                                                    {-654321.0000000001, "MM4" }, {-54321.00000000001, "MM5" }, {-4321.000000000001, "MM6" },
+                                                                    {-1000.000000000001, "MM7" }, {-1000.000000000001, "MM8" }, {-1000.000000000001, "MM9" },
+                                                                    {-100.0000000000001, "MM10"}, { 0,                 "MM11"}, { 100.0000000000001, "MM12"},
+                                                                    { 4321.000000000001, "MM13"}, { 54321.00000000001, "MM14"}, { 654321.0000000001, "MM15"},
+                                                                    { 7654321.000000001, "MM16"}, { 87654321.00000001, "MM17"}, { 987654321.0000001, "MM18"}}));
 }
 
 // ZRevrange

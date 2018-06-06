@@ -525,8 +525,10 @@ Status BlackWidow::ZRemrangebyrank(const Slice& key,
 Status BlackWidow::ZRemrangebyscore(const Slice& key,
                                     double min,
                                     double max,
+                                    bool left_close,
+                                    bool right_close,
                                     int32_t* ret) {
-  return zsets_db_->ZRemrangebyscore(key, min, max, ret);
+  return zsets_db_->ZRemrangebyscore(key, min, max, left_close, right_close, ret);
 }
 
 Status BlackWidow::ZRevrange(const Slice& key,
