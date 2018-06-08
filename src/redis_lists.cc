@@ -73,6 +73,11 @@ Status RedisLists::CompactRange(const rocksdb::Slice* begin,
       handles_[1], begin, end);
 }
 
+Status RedisLists::GetProperty(const std::string& property, std::string* out) {
+  db_->GetProperty(property, out);
+  return Status::OK();
+}
+
 Status RedisLists::LIndex(const Slice& key, int64_t index, std::string* element) {
   rocksdb::ReadOptions read_options;
   const rocksdb::Snapshot* snapshot;

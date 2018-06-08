@@ -26,6 +26,7 @@ class RedisLists : public Redis {
                         const std::string& db_path) override;
     virtual Status CompactRange(const rocksdb::Slice* begin,
                                 const rocksdb::Slice* end) override;
+    virtual Status GetProperty(const std::string& property, std::string* out) override;
 
 
     // Lists commands;

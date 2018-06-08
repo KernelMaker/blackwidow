@@ -45,10 +45,10 @@ ROCKSDB_LIBRARY=$(ROCKSDB_PATH)/librocksdb.a
 
 ifndef SLASH_PATH
   $(warning Warning: missing slash path, using default)
-	SLASH_PATH=../deps/slash/slash
+	SLASH_PATH=../deps/slash
 endif
-SLASH_INCLUDE_DIR=$(SLASH_PATH)/include
-SLASH_LIBRARY=$(SLASH_PATH)/lib/libslash.a
+SLASH_INCLUDE_DIR=$(SLASH_PATH)
+SLASH_LIBRARY=$(SLASH_PATH)/slash/lib/libslash.a
 
 ifndef GOOGLETEST_PATH
   $(warning Warning: missing googletest path, using default)
@@ -62,7 +62,7 @@ CXXFLAGS+= -I$(BLACKWIDOW_PATH) -I$(BLACKWIDOW_INCLUDE_DIR) -I$(ROCKSDB_INCLUDE_
 DEP_LIBS = $(BLACKWIDOW_LIBRARY) $(ROCKSDB_LIBRARY) $(SLASH_LIBRARY) $(GOOGLETEST_LIBRARY)
 LDFLAGS := $(DEP_LIBS) $(LDFLAGS)
 
-OBJECTS= GOOGLETEST ROCKSDB SLASH lock_mgr gtest_keys gtest_strings gtest_hashes gtest_lists gtest_sets gtest_zsets gtest_strings_filter gtest_hashes_filter gtest_hyperloglog gtest_lists_filter
+OBJECTS= GOOGLETEST ROCKSDB SLASH main lock_mgr gtest_keys gtest_strings gtest_hashes gtest_lists gtest_sets gtest_zsets gtest_strings_filter gtest_hashes_filter gtest_hyperloglog gtest_lists_filter
 
 all: $(OBJECTS)
 
@@ -90,7 +90,10 @@ ROCKSDB:
 	$(AM_V_at)make -j $(PROCESSOR_NUMS) -C $(ROCKSDB_PATH)/ static_lib
 
 SLASH:
-	$(AM_V_at)make -C $(SLASH_PATH)
+	$(AM_V_at)make -C $(SLASH_PATH)/slash
+
+main: main.cc
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 
 lock_mgr: lock_mgr.cc
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
@@ -130,4 +133,4 @@ clean:
 	find . -name "*.[oda]" -exec rm -f {} \;
 	rm -f ./make_config.mk
 	rm -rf db
-	rm -rf ./lock_mgr ./gtest_keys ./gtest_strings ./gtest_hashes ./gtest_lists ./gtest_sets ./gtest_zsets ./gtest_strings_filter ./gtest_hashes_filter ./gtest_hyperloglog ./gtest_lists_filter
+	rm -rf ./main ./lock_mgr ./gtest_keys ./gtest_strings ./gtest_hashes ./gtest_lists ./gtest_sets ./gtest_zsets ./gtest_strings_filter ./gtest_hashes_filter ./gtest_hyperloglog ./gtest_lists_filter

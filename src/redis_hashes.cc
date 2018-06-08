@@ -66,6 +66,11 @@ Status RedisHashes::CompactRange(const rocksdb::Slice* begin,
       handles_[1], begin, end);
 }
 
+Status RedisHashes::GetProperty(const std::string& property, std::string* out) {
+  db_->GetProperty(property, out);
+  return Status::OK();
+}
+
 Status RedisHashes::HDel(const Slice& key,
                          const std::vector<std::string>& fields,
                          int32_t* ret) {

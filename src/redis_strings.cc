@@ -29,6 +29,11 @@ Status RedisStrings::CompactRange(const rocksdb::Slice* begin,
   return db_->CompactRange(default_compact_range_options_, begin, end);
 }
 
+Status RedisStrings::GetProperty(const std::string& property, std::string* out) {
+  db_->GetProperty(property, out);
+  return Status::OK();
+}
+
 Status RedisStrings::Append(const Slice& key, const Slice& value,
     int32_t* ret) {
   std::string old_value;

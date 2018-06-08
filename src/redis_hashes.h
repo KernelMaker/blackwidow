@@ -25,6 +25,7 @@ class RedisHashes : public Redis {
                         const std::string& db_path) override;
     virtual Status CompactRange(const rocksdb::Slice* begin,
                                 const rocksdb::Slice* end) override;
+    virtual Status GetProperty(const std::string& property, std::string* out) override;
 
     // Hashes Commands
     Status HDel(const Slice& key, const std::vector<std::string>& fields,

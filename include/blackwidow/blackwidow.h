@@ -23,6 +23,13 @@ namespace blackwidow {
 const int64_t ZSET_SCORE_MAX = std::numeric_limits<double>::max();
 const int64_t ZSET_SCORE_MIN = std::numeric_limits<double>::lowest();
 
+const std::string USAGE_TYPE_ALL = "all";
+const std::string USAGE_TYPE_NEMO = "nemo";
+const std::string USAGE_TYPE_ROCKSDB = "rocksdb";
+const std::string USAGE_TYPE_ROCKSDB_MEMTABLE = "rocksdb.memtable";
+//const std::string USAGE_TYPE_ROCKSDB_BLOCK_CACHE = "rocksdb.block_cache";
+const std::string USAGE_TYPE_ROCKSDB_TABLE_READER = "rocksdb.table_reader";
+
 using Options = rocksdb::Options;
 using Status = rocksdb::Status;
 using Slice = rocksdb::Slice;
@@ -941,6 +948,8 @@ class BlackWidow {
   Status DoCompact(DataType type);
 
   std::string GetCurrentTaskType();
+  Status GetUsage(const std::string& type, uint64_t *result);
+  uint64_t GetProperty(const std::string &property);
 
  private:
   RedisStrings* strings_db_;

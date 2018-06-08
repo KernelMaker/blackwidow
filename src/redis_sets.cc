@@ -69,6 +69,11 @@ Status RedisSets::CompactRange(const rocksdb::Slice* begin,
       handles_[1], begin, end);
 }
 
+Status RedisSets::GetProperty(const std::string& property, std::string* out) {
+  db_->GetProperty(property, out);
+  return Status::OK();
+}
+
 Status RedisSets::SAdd(const Slice& key,
                        const std::vector<std::string>& members, int32_t* ret) {
   std::unordered_set<std::string> unique;

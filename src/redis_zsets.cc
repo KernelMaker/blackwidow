@@ -85,6 +85,11 @@ Status RedisZSets::CompactRange(const rocksdb::Slice* begin,
           handles_[2], begin, end);
 }
 
+Status RedisZSets::GetProperty(const std::string& property, std::string* out) {
+  db_->GetProperty(property, out);
+  return Status::OK();
+}
+
 Status RedisZSets::ZAdd(const Slice& key,
                         const std::vector<ScoreMember>& score_members,
                         int32_t* ret) {

@@ -1251,4 +1251,38 @@ std::string BlackWidow::GetCurrentTaskType() {
   }
 }
 
+Status BlackWidow::GetUsage(const std::string& type, uint64_t *result) {
+  *result = 0;
+  if (type == USAGE_TYPE_ALL || type == USAGE_TYPE_ROCKSDB || type == USAGE_TYPE_ROCKSDB_MEMTABLE) {
+    *result += GetProperty("rocksdb.cur-size-all-mem-tables");
+  }
+  if (type == USAGE_TYPE_ALL || type == USAGE_TYPE_ROCKSDB || type == USAGE_TYPE_ROCKSDB_TABLE_READER) {
+    *result += GetProperty("rocksdb.estimate-table-readers-mem");
+  }
+  if (type == USAGE_TYPE_ALL || type == USAGE_TYPE_NEMO) {
+    //*result += GetLockUsage();
+  }
+  return Status::OK();
+}
+
+uint64_t BlackWidow::GetProperty(const std::string &property) {
+  uint64_t result = 0;
+  char *pEnd;
+  std::string out;
+
+  strings_db_->GetProperty(property, &out);
+  result += std::strtoull(out.c_str(), &pEnd, 10);
+  hashes_db_->GetProperty(property, &out);
+  result += std::strtoull(out.c_str(), &pEnd, 10);
+  zsets_db_->GetProperty(property, &out);
+  result += std::strtoull(out.c_str(), &pEnd, 10);
+  sets_db_->GetProperty(property, &out);
+  result += std::strtoull(out.c_str(), &pEnd, 10);
+  lists_db_->GetProperty(property, &out);
+  result += std::strtoull(out.c_str(), &pEnd, 10);
+
+  //printf ("cur-size-all-mem-tables: (%s)\n", out.c_str());
+  return result;
+}
+
 }  //  namespace blackwidow

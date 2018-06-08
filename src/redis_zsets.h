@@ -24,6 +24,7 @@ class RedisZSets : public Redis {
                         const std::string& db_path) override;
     virtual Status CompactRange(const rocksdb::Slice* begin,
                                 const rocksdb::Slice* end) override;
+    virtual Status GetProperty(const std::string& property, std::string* out) override;
 
     // ZSets Commands
     Status ZAdd(const Slice& key,
