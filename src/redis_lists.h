@@ -30,7 +30,7 @@ class RedisLists : public Redis {
 
     // Lists commands;
     Status LIndex(const Slice& key, int64_t index, std::string* element);
-    Status LInsert(const Slice& key, const BlackWidow::BeforeOrAfter& before_or_after,
+    Status LInsert(const Slice& key, const BeforeOrAfter& before_or_after,
                    const std::string& pivot, const std::string& value, int64_t* ret);
     Status LLen(const Slice& key, uint64_t* len);
     Status LPop(const Slice& key, std::string* element);

@@ -164,7 +164,7 @@ Status RedisSets::SDiff(const std::vector<std::string>& keys,
   int32_t version = 0;
   ScopeSnapshot ss(db_, &snapshot);
   read_options.snapshot = snapshot;
-  std::vector<BlackWidow::KeyVersion> vaild_sets;
+  std::vector<KeyVersion> vaild_sets;
   Status s;
 
   for (uint32_t idx = 1; idx < keys.size(); ++idx) {
@@ -238,7 +238,7 @@ Status RedisSets::SDiffstore(const Slice& destination,
   ScopeRecordLock l(lock_mgr_, destination);
   ScopeSnapshot ss(db_, &snapshot);
   read_options.snapshot = snapshot;
-  std::vector<BlackWidow::KeyVersion> vaild_sets;
+  std::vector<KeyVersion> vaild_sets;
   Status s;
 
   for (uint32_t idx = 1; idx < keys.size(); ++idx) {
@@ -330,7 +330,7 @@ Status RedisSets::SInter(const std::vector<std::string>& keys,
   int32_t version = 0;
   ScopeSnapshot ss(db_, &snapshot);
   read_options.snapshot = snapshot;
-  std::vector<BlackWidow::KeyVersion> vaild_sets;
+  std::vector<KeyVersion> vaild_sets;
   Status s;
 
   for (uint32_t idx = 1; idx < keys.size(); ++idx) {
@@ -416,7 +416,7 @@ Status RedisSets::SInterstore(const Slice& destination,
   ScopeRecordLock l(lock_mgr_, destination);
   ScopeSnapshot ss(db_, &snapshot);
   read_options.snapshot = snapshot;
-  std::vector<BlackWidow::KeyVersion> vaild_sets;
+  std::vector<KeyVersion> vaild_sets;
   Status s;
 
   for (uint32_t idx = 1; idx < keys.size(); ++idx) {
@@ -845,7 +845,7 @@ Status RedisSets::SUnion(const std::vector<std::string>& keys,
   std::string meta_value;
   ScopeSnapshot ss(db_, &snapshot);
   read_options.snapshot = snapshot;
-  std::vector<BlackWidow::KeyVersion> vaild_sets;
+  std::vector<KeyVersion> vaild_sets;
   Status s;
 
   for (uint32_t idx = 0; idx < keys.size(); ++idx) {
@@ -898,7 +898,7 @@ Status RedisSets::SUnionstore(const Slice& destination,
   ScopeRecordLock l(lock_mgr_, destination);
   ScopeSnapshot ss(db_, &snapshot);
   read_options.snapshot = snapshot;
-  std::vector<BlackWidow::KeyVersion> vaild_sets;
+  std::vector<KeyVersion> vaild_sets;
   Status s;
 
   for (uint32_t idx = 0; idx < keys.size(); ++idx) {

@@ -27,7 +27,7 @@ class RedisZSets : public Redis {
 
     // ZSets Commands
     Status ZAdd(const Slice& key,
-                const std::vector<BlackWidow::ScoreMember>& score_members,
+                const std::vector<ScoreMember>& score_members,
                 int32_t* ret);
     Status ZCard(const Slice& key, int32_t* card);
     Status ZCount(const Slice& key,
@@ -43,13 +43,13 @@ class RedisZSets : public Redis {
     Status ZRange(const Slice& key,
                   int32_t start,
                   int32_t stop,
-                  std::vector<BlackWidow::ScoreMember>* score_members);
+                  std::vector<ScoreMember>* score_members);
     Status ZRangebyscore(const Slice& key,
                          double min,
                          double max,
                          bool left_close,
                          bool right_close,
-                         std::vector<BlackWidow::ScoreMember>* score_members);
+                         std::vector<ScoreMember>* score_members);
     Status ZRank(const Slice& key,
                  const Slice& member,
                  int32_t* rank);
@@ -69,13 +69,13 @@ class RedisZSets : public Redis {
     Status ZRevrange(const Slice& key,
                      int32_t start,
                      int32_t stop,
-                     std::vector<BlackWidow::ScoreMember>* score_members);
+                     std::vector<ScoreMember>* score_members);
     Status ZRevrangebyscore(const Slice& key,
                             double min,
                             double max,
                             bool left_close,
                             bool right_close,
-                            std::vector<BlackWidow::ScoreMember>* score_members);
+                            std::vector<ScoreMember>* score_members);
     Status ZRevrank(const Slice& key,
                     const Slice& member,
                     int32_t* rank);
@@ -83,12 +83,12 @@ class RedisZSets : public Redis {
     Status ZUnionstore(const Slice& destination,
                        const std::vector<std::string>& keys,
                        const std::vector<double>& weights,
-                       const BlackWidow::AGGREGATE agg,
+                       const AGGREGATE agg,
                        int32_t* ret);
     Status ZInterstore(const Slice& destination,
                        const std::vector<std::string>& keys,
                        const std::vector<double>& weights,
-                       const BlackWidow::AGGREGATE agg,
+                       const AGGREGATE agg,
                        int32_t* ret);
     Status ZRangebylex(const Slice& key,
                        const Slice& min,

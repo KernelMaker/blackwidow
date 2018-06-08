@@ -154,7 +154,7 @@ Status RedisHashes::HGet(const Slice& key, const Slice& field,
 }
 
 Status RedisHashes::HGetall(const Slice& key,
-                            std::vector<BlackWidow::FieldValue>* fvs) {
+                            std::vector<FieldValue>* fvs) {
   rocksdb::ReadOptions read_options;
   const rocksdb::Snapshot* snapshot;
 
@@ -411,9 +411,9 @@ Status RedisHashes::HMGet(const Slice& key,
 }
 
 Status RedisHashes::HMSet(const Slice& key,
-                          const std::vector<BlackWidow::FieldValue>& fvs) {
+                          const std::vector<FieldValue>& fvs) {
   std::unordered_set<std::string> fields;
-  std::vector<BlackWidow::FieldValue> filtered_fvs;
+  std::vector<FieldValue> filtered_fvs;
   for (auto iter = fvs.rbegin(); iter != fvs.rend(); ++iter) {
     std::string field = iter->field;
     if (fields.find(field) == fields.end()) {

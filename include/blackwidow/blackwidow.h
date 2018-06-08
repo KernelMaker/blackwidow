@@ -8,12 +8,15 @@
 
 #include <string>
 #include <map>
-#include <vector>
 #include <list>
+#include <queue>
+#include <vector>
 
 #include "rocksdb/status.h"
 #include "rocksdb/options.h"
 #include "rocksdb/slice.h"
+
+#include "slash/include/slash_mutex.h"
 
 namespace blackwidow {
 
@@ -32,13 +35,80 @@ class RedisZSets;
 class HyperLogLog;
 class MutexFactory;
 class Mutex;
+
+struct KeyValue {
+  std::string key;
+  std::string value;
+  bool operator < (const KeyValue& kv) const {
+    return key < kv.key;
+  }
+};
+
+struct FieldValue {
+  std::string field;
+  std::string value;
+};
+
+
+struct KeyVersion {
+  std::string key;
+  int32_t version;
+};
+
+enum BeforeOrAfter {
+  Before,
+  After
+};
+
+struct ScoreMember {
+  double score;
+  std::string member;
+};
+
+enum DataType {
+  kAll,
+  kStrings,
+  kHashes,
+  kLists,
+  kZSets,
+  kSets
+};
+
+enum AGGREGATE {
+  SUM,
+  MIN,
+  MAX
+};
+
+enum BitOpType {
+  kBitOpAnd = 1,
+  kBitOpOr,
+  kBitOpXor,
+  kBitOpNot,
+  kBitOpDefault
+};
+
+enum Operation {
+  kNone = 0,
+  kCleanAll,
+  kCleanStrings,
+  kCleanHashes,
+  kCleanZSets,
+  kCleanSets,
+  kCleanLists,
+};
+
+struct BGTask {
+  DataType type;
+
+  BGTask() : type(DataType::kAll) {}
+  BGTask(const DataType _type) : type(_type) {}
+};
+
 class BlackWidow {
  public:
   BlackWidow();
   ~BlackWidow();
-
-  // Just For Test, will be removed later;
-  Status Compact();
 
   Status Open(const Options& options, const std::string& db_path);
 
@@ -55,21 +125,6 @@ class BlackWidow {
   };
 
   // Strings Commands
-  struct KeyValue {
-    std::string key;
-    std::string value;
-    bool operator < (const KeyValue& kv) const {
-      return key < kv.key;
-    }
-  };
-
-  enum BitOpType {
-    kBitOpAnd = 1,
-    kBitOpOr,
-    kBitOpXor,
-    kBitOpNot,
-    kBitOpDefault
-  };
 
   // Set key to hold the string value. if key
   // already holds a value, it is overwritten
@@ -94,7 +149,7 @@ class BlackWidow {
 
   // Sets the given keys to their respective values
   // MSET replaces existing values with new values
-  Status MSet(const std::vector<BlackWidow::KeyValue>& kvs);
+  Status MSet(const std::vector<KeyValue>& kvs);
 
   // Returns the values of all specified keys. For every key
   // that does not hold a string value or does not exist, the
@@ -110,7 +165,7 @@ class BlackWidow {
   // Sets the given keys to their respective values.
   // MSETNX will not perform any operation at all even
   // if just a single key already exists.
-  Status MSetnx(const std::vector<BlackWidow::KeyValue>& kvs, int32_t* ret);
+  Status MSetnx(const std::vector<KeyValue>& kvs, int32_t* ret);
 
   // Set key to hold string value if key does not exist
   // return the length of the string after it was modified by the command
@@ -171,10 +226,6 @@ class BlackWidow {
 
 
   // Hashes Commands
-  struct FieldValue {
-    std::string field;
-    std::string value;
-  };
 
   // Sets field in the hash stored at key to value. If key does not exist, a new
   // key holding a hash is created. If field already exists in the hash, it is
@@ -191,7 +242,7 @@ class BlackWidow {
   // key. This command overwrites any specified fields already existing in the
   // hash. If key does not exist, a new key holding a hash is created.
   Status HMSet(const Slice& key,
-               const std::vector<BlackWidow::FieldValue>& fvs);
+               const std::vector<FieldValue>& fvs);
 
   // Returns the values associated with the specified fields in the hash stored
   // at key.
@@ -206,7 +257,7 @@ class BlackWidow {
   // value, every field name is followed by its value, so the length of the
   // reply is twice the size of the hash.
   Status HGetall(const Slice& key,
-                 std::vector<BlackWidow::FieldValue>* fvs);
+                 std::vector<FieldValue>* fvs);
 
   // Returns all field names in the hash stored at key.
   Status HKeys(const Slice& key,
@@ -264,10 +315,6 @@ class BlackWidow {
 
 
   // Sets Commands
-  struct KeyVersion {
-    std::string key;
-    int32_t version;
-  };
 
   // Add the specified members to the set stored at key. Specified members that
   // are already a member of this set are ignored. If key does not exist, a new
@@ -397,10 +444,6 @@ class BlackWidow {
                      int32_t* ret);
 
   // Lists Commands
-  enum BeforeOrAfter {
-    Before,
-    After
-  };
 
   // Insert all the specified values at the head of the list stored at key. If
   // key does not exist, it is created as empty list before performing the push
@@ -499,16 +542,6 @@ class BlackWidow {
                    std::string* element);
 
   // Zsets Commands
-  struct ScoreMember {
-    double score;
-    std::string member;
-  };
-
-  enum AGGREGATE {
-    SUM,
-    MIN,
-    MAX
-  };
 
   // Adds all the specified members with the specified scores to the sorted set
   // stored at key. It is possible to specify multiple score / member pairs. If
@@ -740,7 +773,7 @@ class BlackWidow {
   Status ZUnionstore(const Slice& destination,
                      const std::vector<std::string>& keys,
                      const std::vector<double>& weights,
-                     const BlackWidow::AGGREGATE agg,
+                     const AGGREGATE agg,
                      int32_t* ret);
 
   // Computes the intersection of numkeys sorted sets given by the specified
@@ -760,7 +793,7 @@ class BlackWidow {
   Status ZInterstore(const Slice& destination,
                      const std::vector<std::string>& keys,
                      const std::vector<double>& weights,
-                     const BlackWidow::AGGREGATE agg,
+                     const AGGREGATE agg,
                      int32_t* ret);
 
   // When all the elements in a sorted set are inserted with the same score, in
@@ -819,13 +852,6 @@ class BlackWidow {
                         int32_t* ret);
 
   // Keys Commands
-  enum DataType {
-    kStrings,
-    kHashes,
-    kLists,
-    kZSets,
-    kSets
-  };
 
   // Note:
   // While any error happens, you need to check type_status for
@@ -905,17 +931,38 @@ class BlackWidow {
   // HyperLogLog structures.
   Status PfMerge(const std::vector<std::string>& keys);
 
+  // Admin Commands
+
+  Status StartBGThread();
+  Status RunBGTask();
+  Status AddBGTask(const BGTask& bg_task);
+
+  Status Compact(DataType type, bool sync = false);
+  Status DoCompact(DataType type);
+
+  std::string GetCurrentTaskType();
+
  private:
   RedisStrings* strings_db_;
   RedisHashes* hashes_db_;
   RedisSets* sets_db_;
-  RedisLists* lists_db_;
   RedisZSets* zsets_db_;
+  RedisLists* lists_db_;
 
   MutexFactory* mutex_factory_;
 
   LRU<int64_t, std::string> cursors_store_;
   std::shared_ptr<Mutex> cursors_mutex_;
+
+  // Blackwidow start the background thread for compaction task
+  pthread_t bg_tasks_thread_id_;
+  slash::Mutex bg_tasks_mutex_;
+  slash::CondVar bg_tasks_cond_var_;
+  std::queue<BGTask> bg_tasks_queue_;
+
+  std::atomic<int> current_task_type_;
+  std::atomic<bool> bg_tasks_should_exit_;
+
 };
 
 }  //  namespace blackwidow
