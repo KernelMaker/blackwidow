@@ -40,6 +40,7 @@ class Redis {
   virtual Status CompactRange(const rocksdb::Slice* begin,
       const rocksdb::Slice* end) = 0;
   virtual Status GetProperty(const std::string& property, std::string* out) = 0;
+  virtual Status ScanKeyNum(uint64_t* num) = 0;
 
   // Keys Commands
   virtual Status Expire(const Slice& key, int32_t ttl) = 0;

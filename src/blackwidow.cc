@@ -24,7 +24,8 @@ BlackWidow::BlackWidow() :
   mutex_factory_(new MutexFactoryImpl),
   bg_tasks_cond_var_(&bg_tasks_mutex_),
   current_task_type_(0),
-  bg_tasks_should_exit_(false) {
+  bg_tasks_should_exit_(false),
+  scan_keynum_exit_(false) {
 
   cursors_store_.max_size_ = 5000;
   cursors_mutex_ = mutex_factory_->AllocateMutex();
@@ -1337,6 +1338,46 @@ uint64_t BlackWidow::GetProperty(const std::string &property) {
 
   //printf ("cur-size-all-mem-tables: (%s)\n", out.c_str());
   return result;
+}
+
+Status BlackWidow::GetKeyNum(std::vector<uint64_t>* nums) {
+  uint64_t num;
+  if (!scan_keynum_exit_) {
+    strings_db_->ScanKeyNum(&num);
+    nums->push_back(num);
+  }
+
+  if (!scan_keynum_exit_) {
+    hashes_db_->ScanKeyNum(&num);
+    nums->push_back(num);
+  }
+
+  if (!scan_keynum_exit_) {
+    lists_db_->ScanKeyNum(&num);
+    nums->push_back(num);
+  }
+
+  if (!scan_keynum_exit_) {
+    zsets_db_->ScanKeyNum(&num);
+    nums->push_back(num);
+  }
+
+  if (!scan_keynum_exit_) {
+    sets_db_->ScanKeyNum(&num);
+    nums->push_back(num);
+  }
+
+  if (scan_keynum_exit_) {
+    scan_keynum_exit_ = false;
+    return Status::Corruption("exit");
+  }
+  return Status::OK();
+}
+
+Status BlackWidow::StopScanKeyNum() {
+  sleep(1);
+  scan_keynum_exit_ = true;
+  return Status::OK();
 }
 
 }  //  namespace blackwidow

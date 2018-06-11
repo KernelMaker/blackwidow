@@ -11,6 +11,7 @@
 #include <list>
 #include <queue>
 #include <vector>
+#include <unistd.h>
 
 #include "rocksdb/status.h"
 #include "rocksdb/options.h"
@@ -941,7 +942,6 @@ class BlackWidow {
   Status PfMerge(const std::vector<std::string>& keys);
 
   // Admin Commands
-
   Status StartBGThread();
   Status RunBGTask();
   Status AddBGTask(const BGTask& bg_task);
@@ -952,6 +952,9 @@ class BlackWidow {
   std::string GetCurrentTaskType();
   Status GetUsage(const std::string& type, uint64_t *result);
   uint64_t GetProperty(const std::string &property);
+
+  Status GetKeyNum(std::vector<uint64_t>* nums);
+  Status StopScanKeyNum();
 
  private:
   RedisStrings* strings_db_;
@@ -973,6 +976,9 @@ class BlackWidow {
 
   std::atomic<int> current_task_type_;
   std::atomic<bool> bg_tasks_should_exit_;
+
+  // For scan keys in data base
+  std::atomic<bool> scan_keynum_exit_;
 
 };
 
