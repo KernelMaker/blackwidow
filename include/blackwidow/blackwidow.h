@@ -916,7 +916,13 @@ class BlackWidow {
   std::map<DataType, int64_t> TTL(const Slice& key,
                                   std::map<DataType, Status>* type_status);
 
-  Status Type(const std::string &key, std::string* type);
+  // Reutrns the data type of the key
+  Status Type(const std::string& key, std::string* type);
+
+  Status Keys(const std::string& type,
+              const std::string& pattern,
+              std::vector<std::string>* keys);
+
 
   // Iterate through all the data in the database.
   void ScanDatabase(const DataType& type);

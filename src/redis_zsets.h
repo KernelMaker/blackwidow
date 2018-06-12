@@ -26,6 +26,8 @@ class RedisZSets : public Redis {
                                 const rocksdb::Slice* end) override;
     virtual Status GetProperty(const std::string& property, std::string* out) override;
     virtual Status ScanKeyNum(uint64_t* num) override;
+    virtual Status ScanKeys(const std::string& pattern,
+                            std::vector<std::string>* keys) override;
 
     // ZSets Commands
     Status ZAdd(const Slice& key,

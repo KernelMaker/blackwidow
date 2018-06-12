@@ -1067,6 +1067,40 @@ Status BlackWidow::Type(const std::string &key, std::string* type) {
   return Status::OK();
 }
 
+Status BlackWidow::Keys(const std::string& type,
+                        const std::string& pattern,
+                        std::vector<std::string>* keys) {
+  Status s;
+  if (type == "string") {
+    s = strings_db_->ScanKeys(pattern, keys);
+    if (!s.ok()) return s;
+  } else if (type == "hash") {
+    s = hashes_db_->ScanKeys(pattern, keys);
+    if (!s.ok()) return s;
+  } else if (type == "zset") {
+    s = zsets_db_->ScanKeys(pattern, keys);
+    if (!s.ok()) return s;
+  } else if (type == "set") {
+    s = sets_db_->ScanKeys(pattern, keys);
+    if (!s.ok()) return s;
+  } else if (type == "list") {
+    s = lists_db_->ScanKeys(pattern, keys);
+    if (!s.ok()) return s;
+  } else {
+    s = strings_db_->ScanKeys(pattern, keys);
+    if (!s.ok()) return s;
+    s = hashes_db_->ScanKeys(pattern, keys);
+    if (!s.ok()) return s;
+    s = zsets_db_->ScanKeys(pattern, keys);
+    if (!s.ok()) return s;
+    s = sets_db_->ScanKeys(pattern, keys);
+    if (!s.ok()) return s;
+    s = lists_db_->ScanKeys(pattern, keys);
+    if (!s.ok()) return s;
+  }
+  return s;
+}
+
 void BlackWidow::ScanDatabase(const DataType& type) {
 
   switch (type) {

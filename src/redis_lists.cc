@@ -102,6 +102,32 @@ Status RedisLists::ScanKeyNum(uint64_t* num) {
   return Status::OK();
 }
 
+Status RedisLists::ScanKeys(const std::string& pattern,
+                              std::vector<std::string>* keys) {
+  std::string key;
+  rocksdb::ReadOptions iterator_options;
+  const rocksdb::Snapshot* snapshot;
+  ScopeSnapshot ss(db_, &snapshot);
+  iterator_options.snapshot = snapshot;
+  iterator_options.fill_cache = false;
+
+  rocksdb::Iterator* iter = db_->NewIterator(iterator_options, handles_[0]);
+  for (iter->SeekToFirst();
+       iter->Valid();
+       iter->Next()) {
+    ParsedListsMetaValue parsed_lists_meta_value(iter->value());
+    if (!parsed_lists_meta_value.IsStale()
+      && parsed_lists_meta_value.count() != 0) {
+      key = iter->key().ToString();
+      if (StringMatch(pattern.data(), pattern.size(), key.data(), key.size(), 0)) {
+        keys->push_back(key);
+      }
+    }
+  }
+  delete iter;
+  return Status::OK();
+}
+
 Status RedisLists::LIndex(const Slice& key, int64_t index, std::string* element) {
   rocksdb::ReadOptions read_options;
   const rocksdb::Snapshot* snapshot;

@@ -93,7 +93,6 @@ Status RedisZSets::GetProperty(const std::string& property, std::string* out) {
 Status RedisZSets::ScanKeyNum(uint64_t* num) {
 
   uint64_t count = 0;
-  std::string meta_value;
   rocksdb::ReadOptions iterator_options;
   const rocksdb::Snapshot* snapshot;
   ScopeSnapshot ss(db_, &snapshot);
@@ -111,6 +110,33 @@ Status RedisZSets::ScanKeyNum(uint64_t* num) {
     }
   }
   *num = count;
+  delete iter;
+  return Status::OK();
+}
+
+Status RedisZSets::ScanKeys(const std::string& pattern,
+                            std::vector<std::string>* keys) {
+
+  std::string key;
+  rocksdb::ReadOptions iterator_options;
+  const rocksdb::Snapshot* snapshot;
+  ScopeSnapshot ss(db_, &snapshot);
+  iterator_options.snapshot = snapshot;
+  iterator_options.fill_cache = false;
+
+  rocksdb::Iterator* iter = db_->NewIterator(iterator_options, handles_[0]);
+  for (iter->SeekToFirst();
+       iter->Valid();
+       iter->Next()) {
+    ParsedZSetsMetaValue parsed_zsets_meta_value(iter->value());
+    if (!parsed_zsets_meta_value.IsStale()
+      && parsed_zsets_meta_value.count() != 0) {
+      key = iter->key().ToString();
+      if (StringMatch(pattern.data(), pattern.size(), key.data(), key.size(), 0)) {
+        keys->push_back(key);
+      }
+    }
+  }
   delete iter;
   return Status::OK();
 }

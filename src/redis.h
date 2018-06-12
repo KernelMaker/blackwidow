@@ -41,6 +41,8 @@ class Redis {
       const rocksdb::Slice* end) = 0;
   virtual Status GetProperty(const std::string& property, std::string* out) = 0;
   virtual Status ScanKeyNum(uint64_t* num) = 0;
+  virtual Status ScanKeys(const std::string& pattern,
+                          std::vector<std::string>* keys) = 0;
 
   // Keys Commands
   virtual Status Expire(const Slice& key, int32_t ttl) = 0;

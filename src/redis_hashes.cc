@@ -95,6 +95,33 @@ Status RedisHashes::ScanKeyNum(uint64_t* num) {
   return Status::OK();
 }
 
+Status RedisHashes::ScanKeys(const std::string& pattern,
+                             std::vector<std::string>* keys) {
+
+  std::string key;
+  rocksdb::ReadOptions iterator_options;
+  const rocksdb::Snapshot* snapshot;
+  ScopeSnapshot ss(db_, &snapshot);
+  iterator_options.snapshot = snapshot;
+  iterator_options.fill_cache = false;
+
+  rocksdb::Iterator* iter = db_->NewIterator(iterator_options, handles_[0]);
+  for (iter->SeekToFirst();
+       iter->Valid();
+       iter->Next()) {
+    ParsedHashesMetaValue parsed_hashes_meta_value(iter->value());
+    if (!parsed_hashes_meta_value.IsStale()
+      && parsed_hashes_meta_value.count() != 0) {
+      key = iter->key().ToString();
+      if (StringMatch(pattern.data(), pattern.size(), key.data(), key.size(), 0)) {
+        keys->push_back(key);
+      }
+    }
+  }
+  delete iter;
+  return Status::OK();
+}
+
 Status RedisHashes::HDel(const Slice& key,
                          const std::vector<std::string>& fields,
                          int32_t* ret) {

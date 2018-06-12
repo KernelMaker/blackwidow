@@ -27,6 +27,8 @@ class RedisHashes : public Redis {
                                 const rocksdb::Slice* end) override;
     virtual Status GetProperty(const std::string& property, std::string* out) override;
     virtual Status ScanKeyNum(uint64_t* num) override;
+    virtual Status ScanKeys(const std::string& pattern,
+                            std::vector<std::string>* keys) override;
 
     // Hashes Commands
     Status HDel(const Slice& key, const std::vector<std::string>& fields,

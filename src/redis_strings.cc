@@ -37,7 +37,6 @@ Status RedisStrings::GetProperty(const std::string& property, std::string* out) 
 Status RedisStrings::ScanKeyNum(uint64_t* num) {
 
   uint64_t count = 0;
-  std::string key, value;
   rocksdb::ReadOptions iterator_options;
   const rocksdb::Snapshot* snapshot;
   ScopeSnapshot ss(db_, &snapshot);
@@ -56,6 +55,33 @@ Status RedisStrings::ScanKeyNum(uint64_t* num) {
     }
   }
   *num = count;
+  delete iter;
+  return Status::OK();
+}
+
+Status RedisStrings::ScanKeys(const std::string& pattern,
+                              std::vector<std::string>* keys) {
+  std::string key;
+  rocksdb::ReadOptions iterator_options;
+  const rocksdb::Snapshot* snapshot;
+  ScopeSnapshot ss(db_, &snapshot);
+  iterator_options.snapshot = snapshot;
+  iterator_options.fill_cache = false;
+
+  // Note: This is a string type and does not need to pass the column family as
+  // a parameter, use the default column family
+  rocksdb::Iterator* iter = db_->NewIterator(iterator_options);
+  for (iter->SeekToFirst();
+       iter->Valid();
+       iter->Next()) {
+    ParsedStringsValue parsed_strings_value(iter->value());
+    if (!parsed_strings_value.IsStale()) {
+      key = iter->key().ToString();
+      if (StringMatch(pattern.data(), pattern.size(), key.data(), key.size(), 0)) {
+        keys->push_back(key);
+      }
+    }
+  }
   delete iter;
   return Status::OK();
 }
