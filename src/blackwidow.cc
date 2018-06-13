@@ -121,8 +121,7 @@ Status BlackWidow::GetStartKey(int64_t cursor, std::string* start_key) {
 int64_t BlackWidow::StoreAndGetCursor(int64_t cursor,
                                       const std::string& next_key) {
   cursors_mutex_->Lock();
-  if (cursors_store_.map_.size() >
-      static_cast<size_t>(cursors_store_.max_size_)) {
+  if (cursors_store_.map_.size() > cursors_store_.max_size_) {
     int64_t tail = cursors_store_.list_.back();
     cursors_store_.list_.remove(tail);
     cursors_store_.map_.erase(tail);
@@ -385,6 +384,11 @@ Status BlackWidow::SUnionstore(const Slice& destination,
                                const std::vector<std::string>& keys,
                                int32_t* ret) {
   return sets_db_->SUnionstore(destination, keys, ret);
+}
+
+Status BlackWidow::SScan(const Slice& key, int64_t cursor, const std::string& pattern,
+                         int64_t count, std::vector<std::string>* members, int64_t* next_cursor) {
+  return sets_db_->SScan(key, cursor, pattern, count, members, next_cursor);
 }
 
 Status BlackWidow::LPush(const Slice& key,
