@@ -5,6 +5,7 @@
 
 #include "blackwidow/blackwidow.h"
 
+#include "src/util.h"
 #include "src/mutex_impl.h"
 #include "src/redis_strings.h"
 #include "src/redis_hashes.h"
@@ -65,6 +66,8 @@ static std::string AppendSubDirectory(const std::string& db_path,
 
 Status BlackWidow::Open(const rocksdb::Options& options,
                         const std::string& db_path) {
+  mkpath(db_path.c_str(), 0755);
+
   strings_db_ = new RedisStrings();
   Status s = strings_db_->Open(options, AppendSubDirectory(db_path, "strings"));
   if (!s.ok()) {

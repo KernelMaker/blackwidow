@@ -9,6 +9,7 @@
 #include <string>
 #include <cstring>
 #include <cmath>
+#include <sys/stat.h>
 
 namespace blackwidow {
 
@@ -19,6 +20,8 @@ namespace blackwidow {
                   int string_len, int nocase);
   int StrToLongDouble(const char* s, size_t slen, long double* ldval);
   int LongDoubleToStr(long double ldval, std::string* value);
+  int do_mkdir(const char *path, mode_t mode);
+  int mkpath(const char *path, mode_t mode);
 }
 
 #endif  //  SRC_UTIL_H_
