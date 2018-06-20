@@ -608,6 +608,10 @@ Status BlackWidow::ZRemrangebylex(const Slice& key,
   return zsets_db_->ZRemrangebylex(key, min, max, left_close, right_close, ret);
 }
 
+Status BlackWidow::ZScan(const Slice& key, int64_t cursor, const std::string& pattern,
+                         int64_t count, std::vector<ScoreMember>* score_members, int64_t* next_cursor) {
+  return zsets_db_->ZScan(key, cursor, pattern, count, score_members, next_cursor);
+}
 
 
 // Keys Commands

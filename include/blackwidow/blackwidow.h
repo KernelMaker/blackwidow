@@ -867,6 +867,10 @@ class BlackWidow {
                         bool right_close,
                         int32_t* ret);
 
+  // See SCAN for ZSCAN documentation.
+  Status ZScan(const Slice& key, int64_t cursor, const std::string& pattern,
+               int64_t count, std::vector<ScoreMember>* score_members, int64_t* next_cursor);
+
   // Keys Commands
 
   // Note:
