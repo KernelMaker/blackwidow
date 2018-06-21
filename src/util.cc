@@ -3,11 +3,11 @@
 //  LICENSE file in the root directory of this source tree. An additional grant
 //  of patent rights can be found in the PATENTS file in the same directory.
 
-#include "src/util.h"
-
 #include <ctype.h>
 #include <stdint.h>
 #include <limits.h>
+
+#include "blackwidow/util.h"
 
 namespace blackwidow {
 
@@ -387,6 +387,65 @@ int mkpath(const char *path, mode_t mode) {
     status = do_mkdir(path, mode);
   free(copypath);
   return (status);
+}
+
+int delete_dir(const char* dirname)
+{
+    char chBuf[256];
+    DIR * dir = NULL;
+    struct dirent *ptr;
+    int ret = 0;
+    dir = opendir(dirname);
+    if (NULL == dir) {
+        return -1;
+    }
+    while((ptr = readdir(dir)) != NULL) {
+        ret = strcmp(ptr->d_name, ".");
+        if (0 == ret) {
+            continue;
+        }
+        ret = strcmp(ptr->d_name, "..");
+        if (0 == ret) {
+            continue;
+        }
+        snprintf(chBuf, 256, "%s/%s", dirname, ptr->d_name);
+        ret = is_dir(chBuf);
+        if (0 == ret) {
+            //is dir
+            ret = delete_dir(chBuf);
+            if (0 != ret) {
+                return -1;
+            }
+        }
+        else if (1 == ret) {
+            //is file
+            ret = remove(chBuf);
+            if(0 != ret) {
+                return -1;
+            }
+        }
+    }
+    (void)closedir(dir);
+    ret = remove(dirname);
+    if (0 != ret) {
+        return -1;
+    }
+    return 0;
+}
+
+int is_dir(const char* filename) {
+    struct stat buf;
+    int ret = stat(filename,&buf);
+    if (0 == ret) {
+        if (buf.st_mode & S_IFDIR) {
+            //folder
+            return 0;
+        } else {
+            //file
+            return 1;
+        }
+    }
+    return -1;
 }
 
 }  //  namespace blackwidow

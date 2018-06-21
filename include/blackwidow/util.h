@@ -9,7 +9,9 @@
 #include <string>
 #include <cstring>
 #include <cmath>
+#include <dirent.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 
 namespace blackwidow {
 
@@ -22,6 +24,8 @@ namespace blackwidow {
   int LongDoubleToStr(long double ldval, std::string* value);
   int do_mkdir(const char *path, mode_t mode);
   int mkpath(const char *path, mode_t mode);
+  int delete_dir(const char* dirname);
+  int is_dir(const char* filename);
 }
 
 #endif  //  SRC_UTIL_H_

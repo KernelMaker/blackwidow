@@ -31,6 +31,13 @@ const std::string USAGE_TYPE_ROCKSDB_MEMTABLE = "rocksdb.memtable";
 //const std::string USAGE_TYPE_ROCKSDB_BLOCK_CACHE = "rocksdb.block_cache";
 const std::string USAGE_TYPE_ROCKSDB_TABLE_READER = "rocksdb.table_reader";
 
+const std::string ALL_DB = "all";
+const std::string STRINGS_DB = "strings";
+const std::string HASHES_DB = "hashes";
+const std::string LISTS_DB = "lists";
+const std::string ZSETS_DB = "zsets";
+const std::string SETS_DB = "sets";
+
 using Options = rocksdb::Options;
 using Status = rocksdb::Status;
 using Slice = rocksdb::Slice;
@@ -973,6 +980,8 @@ class BlackWidow {
 
   Status GetKeyNum(std::vector<uint64_t>* nums);
   Status StopScanKeyNum();
+
+  rocksdb::DB* GetDBByType(const std::string& type);
 
  private:
   RedisStrings* strings_db_;
