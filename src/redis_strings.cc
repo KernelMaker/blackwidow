@@ -563,9 +563,10 @@ Status RedisStrings::MGet(const std::vector<std::string>& keys,
 }
 
 Status RedisStrings::MSet(const std::vector<KeyValue>& kvs) {
-  std::vector<std::string> keys;
-  for (const auto& kv :  kvs) {
-    keys.push_back(kv.key);
+  const auto size = kvs.size();
+  std::vector<std::string> keys(size);
+  for (size_t  i = 0; i < size; ++i){
+	  keys[i] = kvs[i].key;
   }
 
   MultiScopeRecordLock ml(lock_mgr_, keys);
