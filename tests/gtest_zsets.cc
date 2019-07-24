@@ -4404,6 +4404,39 @@ TEST_F(ZSetsTest, ZScanTest) {
 }
 
 
+// ZPop
+TEST_F(ZSetsTest, ZPop) {
+    int32_t ret;
+    std::map<DataType, int64_t> type_ttl;
+    std::map<blackwidow::DataType, rocksdb::Status> type_status;
+
+    std::vector<blackwidow::ScoreMember> gp1_sm{ {3.23, "MM1"}, {0, "MM2"}, {8.0004, "MM3"}, {-0.54, "MM4"} };
+    db.ZAdd("GP1_ZPOP_KEY", gp1_sm, &ret);
+
+    std::vector<blackwidow::ScoreMember> res;
+    s = db.ZPopmax("GP1_ZPOP_KEY", 1, &res);
+    ASSERT_TRUE(s.ok());
+    ASSERT_TRUE(size_match(&db, "GP1_ZPOP_KEY", 3));
+    ASSERT_TRUE(score_members_match(&db, "GP1_ZPOP_KEY", { {-0.54, "MM4"}, {0, "MM2"}, {3.23, "MM1"} }));
+    std::vector<blackwidow::ScoreMember> t1 {{ 8.0004, "MM3" }};
+    ASSERT_EQ(res, t1);
+
+    res.clear();
+    s = db.ZPopmin("GP1_ZPOP_KEY", 1, &res);
+    ASSERT_TRUE(s.ok());
+    ASSERT_TRUE(size_match(&db, "GP1_ZPOP_KEY", 2));
+    ASSERT_TRUE(score_members_match(&db, "GP1_ZPOP_KEY", {  {0, "MM2"}, {3.23, "MM1"} }));
+    std::vector<blackwidow::ScoreMember> t2 {{-0.54, "MM4"}};
+    ASSERT_EQ(res, t2);
+
+    res.clear();
+    s = db.ZPopmin("GP1_ZPOP_KEY", 5555, &res);
+    ASSERT_TRUE(s.ok());
+    ASSERT_TRUE(size_match(&db, "GP1_ZPOP_KEY", 0));
+    std::vector<blackwidow::ScoreMember> t3{{0, "MM2"}, { 3.23, "MM1" } };
+    ASSERT_EQ(res, t3);
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

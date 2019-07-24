@@ -130,7 +130,7 @@ static_lib: $(LIBRARY)
 dbg: $(LIBRARY)
 
 test:
-	make test -C ./tests
+	make test -C ./tests -j$(nproc)
 
 example:
 	make -C ./examples

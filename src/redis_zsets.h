@@ -132,7 +132,10 @@ class RedisZSets : public Redis {
                       int32_t limit,
                       std::vector<std::string>* keys,
                       std::string* next_key);
-
+  Status ZPopmax(const Slice& key, int64_t count,
+                 std::vector<ScoreMember>* score_members);
+  Status ZPopmin(const Slice& key, int64_t count,
+                 std::vector<ScoreMember>* score_members);
   // Keys Commands
   Status Expire(const Slice& key, int32_t ttl) override;
   Status Del(const Slice& key) override;

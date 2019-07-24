@@ -970,6 +970,9 @@ class BlackWidow {
   Status ZScan(const Slice& key, int64_t cursor, const std::string& pattern,
                int64_t count, std::vector<ScoreMember>* score_members, int64_t* next_cursor);
 
+  Status ZPopmax(const Slice& key, int64_t count, std::vector<ScoreMember>* score_members);
+  Status ZPopmin(const Slice& key, int64_t count, std::vector<ScoreMember>* score_members);
+
   // Keys Commands
 
   // Note:

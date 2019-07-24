@@ -695,6 +695,14 @@ Status BlackWidow::ZScan(const Slice& key, int64_t cursor,
       pattern, count, score_members, next_cursor);
 }
 
+Status BlackWidow::ZPopmax(const Slice& key, int64_t count,
+                           std::vector<ScoreMember>* score_members) {
+    return zsets_db_->ZPopmax(key,count, score_members);
+}
+Status BlackWidow::ZPopmin(const Slice& key, int64_t count,
+                           std::vector<ScoreMember>* score_members) {
+    return zsets_db_->ZPopmin(key, count,score_members);
+}
 
 // Keys Commands
 int32_t BlackWidow::Expire(const Slice& key, int32_t ttl,

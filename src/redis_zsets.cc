@@ -1768,6 +1768,116 @@ void RedisZSets::ScanDatabase() {
   }
   delete score_iter;
 }
+Status RedisZSets::ZPopmax(const Slice& key, int64_t count_to_pop,
+                           std::vector<ScoreMember>* score_members) {
+  size_t statistic = 0;
+
+  std::string meta_value;
+  rocksdb::WriteBatch batch;
+
+  ScopeRecordLock l(lock_mgr_, key);
+  rocksdb::Status s = db_->Get(default_read_options_, handles_[0],
+                               key, &meta_value);
+  if (s.ok()) {
+    ParsedZSetsMetaValue parsed_zsets_meta_value(&meta_value);
+    if (parsed_zsets_meta_value.IsStale()) {
+      return rocksdb::Status::NotFound("Stale");
+    } else if (parsed_zsets_meta_value.count() == 0) {
+      return rocksdb::Status::NotFound();
+    } else {
+      int64_t deleted = 0;
+      const int64_t count = parsed_zsets_meta_value.count();
+      int64_t version = parsed_zsets_meta_value.version();
+
+      if (count < count_to_pop) {
+        count_to_pop = count;
+      }
+
+      ZSetsScoreKey zsets_score_key(
+          key, version, std::numeric_limits<long double>::max(), Slice());
+      rocksdb::Iterator* iter =
+          db_->NewIterator(default_read_options_, handles_[2]);
+      for (iter->SeekForPrev(zsets_score_key.Encode());
+           iter->Valid() && (deleted < count_to_pop); iter->Prev()) {
+        ParsedZSetsScoreKey parsed_zsets_score_key(iter->key());
+        ZSetsMemberKey zsets_member_key(key, version,
+                                        parsed_zsets_score_key.member());
+        batch.Delete(handles_[1], zsets_member_key.Encode());
+        batch.Delete(handles_[2], iter->key());
+        score_members->emplace_back(
+            ScoreMember{parsed_zsets_score_key.score(),
+                        parsed_zsets_score_key.member().ToString()});
+        deleted++;
+        statistic++;
+      }
+
+      delete iter;
+      parsed_zsets_meta_value.ModifyCount(-deleted);
+      batch.Put(handles_[0], key, meta_value);
+    }
+  }
+  if (s.ok()) {
+    s = db_->Write(default_write_options_, &batch);
+    UpdateSpecificKeyStatistics(key.ToString(), statistic);
+  }
+  return s;
+}
+
+Status RedisZSets::ZPopmin(const Slice& key, int64_t count_to_pop,
+                           std::vector<ScoreMember>* score_members) {
+  size_t statistic = 0;
+
+  std::string meta_value;
+  rocksdb::WriteBatch batch;
+
+  ScopeRecordLock l(lock_mgr_, key);
+  rocksdb::Status s = db_->Get(default_read_options_, handles_[0],
+                               key, &meta_value);
+  if (s.ok()) {
+    ParsedZSetsMetaValue parsed_zsets_meta_value(&meta_value);
+    if (parsed_zsets_meta_value.IsStale()) {
+      return rocksdb::Status::NotFound("Stale");
+    } else if (parsed_zsets_meta_value.count() == 0) {
+      return rocksdb::Status::NotFound();
+    } else {
+      int64_t deleted = 0;
+      const int64_t count = parsed_zsets_meta_value.count();
+      int64_t version = parsed_zsets_meta_value.version();
+
+      if (count < count_to_pop) {
+        count_to_pop = count;
+      }
+
+      ZSetsScoreKey zsets_score_key(
+          key, version, std::numeric_limits<double>::lowest(), Slice());
+      rocksdb::Iterator* iter =
+          db_->NewIterator(default_read_options_, handles_[2]);
+      for (iter->Seek(zsets_score_key.Encode());
+           iter->Valid() && (deleted < count_to_pop); iter->Next()) {
+        ParsedZSetsScoreKey parsed_zsets_score_key(iter->key());
+        ZSetsMemberKey zsets_member_key(key, version,
+                                        parsed_zsets_score_key.member());
+        batch.Delete(handles_[1], zsets_member_key.Encode());
+        batch.Delete(handles_[2], iter->key());
+        score_members->emplace_back(
+            ScoreMember{parsed_zsets_score_key.score(),
+                        parsed_zsets_score_key.member().ToString()});
+        deleted++;
+        statistic++;
+      }
+
+      delete iter;
+      parsed_zsets_meta_value.ModifyCount(-deleted);
+      batch.Put(handles_[0], key, meta_value);
+    }
+  }
+  if (s.ok()) {
+    s = db_->Write(default_write_options_, &batch);
+    UpdateSpecificKeyStatistics(key.ToString(), statistic);
+  }
+  return s;
+}
+
 
 }  // namespace blackwidow
 
